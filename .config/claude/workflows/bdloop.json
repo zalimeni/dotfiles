@@ -8,8 +8,7 @@
     "autoApprove": true,
     "allowedTools": [
       "Bash(bd *)",
-      "Bash(jj *)",
-      "Bash(tea *)",
+      "Bash(git *)",
       "Bash(ast-grep *)",
       "Bash(sg *)",
       "Read",

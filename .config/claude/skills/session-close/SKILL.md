@@ -2,10 +2,9 @@
 name: session-close
 description: Protocol for properly ending a coding session - ensures all work is committed, pushed, and handed off correctly.
 license: MIT
-compatibility: opencode
 metadata:
   category: workflow
-  tools: jj, bd
+  tools: git, bd
 ---
 
 ## When to use me
@@ -14,7 +13,7 @@ Use this skill when ending a work session. This ensures all work is properly sav
 
 ## Landing the Plane (Session Completion)
 
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `jj git push` succeeds.
+**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
 
 **MANDATORY WORKFLOW:**
 
@@ -23,20 +22,22 @@ Use this skill when ending a work session. This ensures all work is properly sav
 3. **Update issue status** - Close finished work, update in-progress items
 4. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
-   jj git fetch
-   jj rebase -d main
+   git fetch origin
+   git rebase origin/main
    bd sync
-   jj bookmark set <bookmark-name>
-   jj git push -b <bookmark-name>
-   jj status  # Verify push succeeded
+   # Push with upstream tracking (handles both new and existing branches)
+   git push -u origin HEAD
+   git status  # Verify push succeeded
    ```
+   If `git push` fails with "no upstream branch", the `-u` flag handles it.
+   If it fails with conflicts after rebase, resolve them and retry.
 5. **Clean up** - Clear stashes, prune remote branches
 6. **Verify** - All changes committed AND pushed
 7. **Hand off** - Provide context for next session
 
 ## Critical Rules
 
-- Work is NOT complete until `jj git push` succeeds
+- Work is NOT complete until `git push` succeeds
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
@@ -46,11 +47,11 @@ Use this skill when ending a work session. This ensures all work is properly sav
 Before saying "done" or "complete", run this checklist:
 
 ```
-[ ] 1. jj status                 (check what changed)
-[ ] 2. jj describe -m "..."      (describe current commit)
-[ ] 3. bd sync                   (sync beads changes)
-[ ] 4. jj bookmark set <name>    (set bookmark on current commit)
-[ ] 5. jj git push -b <name>     (push to remote)
+[ ] 1. git status                 (check what changed)
+[ ] 2. git add && git commit      (stage and commit changes)
+[ ] 3. bd sync                    (sync beads changes)
+[ ] 4. git push -u origin HEAD    (push to remote, set upstream)
+[ ] 5. git status                 (verify clean working tree)
 ```
 
 **NEVER skip this.** Work is not done until pushed.

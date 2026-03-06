@@ -1,12 +1,12 @@
 ---
 description: spawn agent worktree to execute bdloop
 argument-hint: <branch-name> <epic-id>
-allowed-tools: Bash(tmux-claude-worktree *), Bash(jj *), Bash(bd *)
+allowed-tools: Bash(tmux-claude-worktree *), Bash(git *), Bash(bd *)
 ---
 # BD Agent Worktree
 
 ## Overview
-Creates a new jj worktree in a sibling directory, spawns a tmux session there, and starts a Claude agent running `/bdloop` on the specified epic. Used after planning is complete to delegate execution to a separate agent in an isolated workspace.
+Creates a new git worktree in a sibling directory, spawns a tmux session there, and starts a Claude agent running `/bdloop` on the specified epic. Used after planning is complete to delegate execution to a separate agent in an isolated workspace.
 
 ## Arguments
 $ARGUMENTS
@@ -70,8 +70,7 @@ tmux-claude-worktree "$branch_name" "$epic_id"
 ```
 
 The script will:
-- Create a jj worktree at `../$branch_name` (sibling directory)
-- Create branch `$branch_name` and set it as working copy
+- Create a git worktree at `../$branch_name` on a new branch
 - Create a new tmux session named after the branch
 - Start Claude in that session with `/bdloop $epic_id`
 - Leave the current session active (doesn't switch)
@@ -137,7 +136,7 @@ User: "Okay, the plan looks good. Let's get started on proj-100."
 
 - **After `/bdplan`**: Create the worktree and start execution
 - **Before `/session-close`**: Optionally spawn agent before ending planning session
-- **With `/jujutsu`**: Uses jj worktrees for clean isolation
+- Uses git worktrees for clean isolation
 
 ## Notes
 
@@ -146,3 +145,4 @@ User: "Okay, the plan looks good. Let's get started on proj-100."
 - Multiple agents can run in parallel (different worktrees/epics)
 - Use `tmux list-sessions` to see all active agent sessions
 - The worktree is a sibling directory, not a subdirectory of the main repo
+- Clean up worktrees when done: `git worktree remove ../$branch_name`

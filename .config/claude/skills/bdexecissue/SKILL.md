@@ -1,7 +1,7 @@
 ---
 description: execute a single bd issue
 argument-hint: <issue key>
-allowed-tools: Bash(bd *), Bash(tea *), Bash(jj *), Bash(ast-grep *), Bash(sg *), Read, Edit, Write, Glob, Grep
+allowed-tools: Bash(bd *), Bash(git *), Bash(ast-grep *), Bash(sg *), Read, Edit, Write, Glob, Grep
 context: fork
 ---
 
@@ -9,7 +9,7 @@ context: fork
 
 ## Overview
 
-Execute a single bd issue with proper status tracking, commenting, and jj workflow integration. This command handles one issue in isolation, keeping context clean.
+Execute a single bd issue with proper status tracking, commenting, and git workflow integration. This command handles one issue in isolation, keeping context clean.
 
 Execute the bd issue [issue-id] following the bdexecissue workflow:
 
@@ -67,11 +67,27 @@ bd comment [issue-id] "Commit [hash]: [what was done]"
 
 ### 4. Complete the Issue
 
+#### Run Quality Gates
+
+Before closing, run applicable checks:
+
+```bash
+# If Makefile exists with test/lint targets:
+make test
+make lint
+
+# Otherwise, run Go tests and linting directly:
+go test ./...
+golangci-lint run
+```
+
+Pick whichever is appropriate for the project. If tests or linting fail, fix the issues before closing.
+
 #### Before Closing
 
 - ✅ All acceptance criteria met
-- ✅ Tests pass (run them!)
-- ✅ All changes committed to jj
+- ✅ Quality gates pass (tests, linting)
+- ✅ All changes committed to git
 - ✅ No uncommitted files related to this issue
 
 #### Close with Summary
