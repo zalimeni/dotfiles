@@ -1,6 +1,6 @@
 ---
 description: review code changes since a baseline commit and plan fixes
-argument-hint: <target> [label]
+argument-hint: [target] [label]
 allowed-tools: Skill, Task, Bash(bd:*), Bash(git *), Bash(gh *)
 ---
 
@@ -14,9 +14,10 @@ Review code changes for a given target (commit, range, or PR), categorize findin
 
 $ARGUMENTS
 
-- `target` (required): What to review. One of:
+- `target` (optional, default: `main`): What to review. One of:
+  - **Refname** — branch or tag name; diffs `refname..HEAD` (e.g., `main`, `origin/main`, `v1.2.0`)
   - **Single SHA** — diffs `SHA..HEAD` (e.g., `abc1234`)
-  - **SHA range** — diffs the range as-is (e.g., `abc1234..def5678`)
+  - **Ref range** — diffs the range as-is (e.g., `main..feature`, `abc1234..def5678`)
   - **PR reference** — diffs the pull request (e.g., `#123`, `123`, or a GitHub PR URL)
 - `label` (optional): Context label for output cards (e.g., "Iteration 2")
 
@@ -24,19 +25,21 @@ $ARGUMENTS
 
 ### 1. Resolve Target
 
+If no target is provided, default to `main`.
+
 Detect the input type and resolve it into `DIFF_CMD` and `LOG_CMD` variables used by later steps.
 
 | Input | Detection | DIFF_CMD | LOG_CMD |
 | ----- | --------- | -------- | ------- |
 | PR ref (`#N`, bare number, or `github.com/.../pull/N` URL) | matches `#?\d+$` or GH PR URL | `gh pr diff N` | `gh pr view N` |
-| SHA range (`A..B`) | contains `..` | `git diff A..B` | `git log A..B --oneline` |
-| Single SHA | default | `git diff SHA..HEAD` | `git log SHA..HEAD --oneline` |
+| Ref range (`A..B`) | contains `..` | `git diff A..B` | `git log A..B --oneline` |
+| Single ref (SHA, branch, or tag) | default | `git diff REF..HEAD` | `git log REF..HEAD --oneline` |
 
 **Validate the resolved target:**
 
 - **PR**: `gh pr view N --json number` must succeed. If the PR is not found, exit with an error.
-- **SHA range**: `git cat-file -t A` and `git cat-file -t B` must both resolve to commits.
-- **Single SHA**: `git cat-file -t SHA` must resolve to a commit.
+- **Ref range**: `git rev-parse A` and `git rev-parse B` must both resolve to commits.
+- **Single ref**: `git rev-parse REF` must resolve to a commit.
 
 If validation fails, exit with an error message.
 
@@ -45,7 +48,7 @@ If validation fails, exit with an error message.
 Run `LOG_CMD` to verify there are changes to review.
 
 - **PR**: `gh pr view N --json additions,deletions` — if both are 0, no changes.
-- **SHA range / single SHA**: if the log output is empty, no changes.
+- **Ref range / single ref**: if the log output is empty, no changes.
 
 If no changes, output a message and exit — nothing to review.
 
@@ -60,7 +63,7 @@ If no changes, output a message and exit — nothing to review.
 
 Invoke the review agent scoped to the resolved target:
 
-**For SHA-based targets (single SHA or range):**
+**For ref-based targets (single ref or range):**
 
 ```
 Task(
@@ -158,7 +161,8 @@ Report whether new ready issues were created.
 
 - **Review agent failure**: If the review Task errors or returns unusable output, exit with a warning and recommend manual review.
 - **No changes**: Exit early with SKIP verdict (Step 2).
-- **Invalid target**: Exit with error (Step 1) — SHA doesn't exist, PR not found, etc.
+- **No target provided**: Default to `main` as the base ref.
+- **Invalid target**: Exit with error (Step 1) — ref doesn't exist, PR not found, etc.
 - **Closed/merged PR**: Still reviewable — `gh pr diff` works on closed PRs.
 - **PR URL formats**: Support both `https://github.com/org/repo/pull/123` and shorthand `#123` / `123`.
 - **bdplan creates no issues**: Report that no actionable issues were created from findings.
