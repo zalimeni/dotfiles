@@ -136,4 +136,5 @@ func resetFlags() {
 	flagClientID = ""
 	flagTenantID = "common"
 	flagTokenPath = ""
+	flagNoClean = false
 }
