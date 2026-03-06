@@ -305,9 +305,10 @@ func extractJSONString(body []byte, key string) (string, error) {
 }
 
 // sanitizeFilename removes characters that are unsafe in filenames.
+// filepath.Base is applied as defense-in-depth against path traversal.
 func sanitizeFilename(name string) string {
 	re := regexp.MustCompile(`[^a-zA-Z0-9._-]`)
-	return re.ReplaceAllString(name, "_")
+	return filepath.Base(re.ReplaceAllString(name, "_"))
 }
 
 // RefType classifies the kind of SharePoint URL.
