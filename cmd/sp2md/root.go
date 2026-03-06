@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/zalimeni/sp2md/internal/auth"
+	mdclean "github.com/zalimeni/sp2md/internal/cleanup"
 	"github.com/zalimeni/sp2md/internal/pandoc"
 	"github.com/zalimeni/sp2md/internal/sharepoint"
 )
@@ -21,6 +22,7 @@ var (
 	flagClientID  string
 	flagTenantID  string
 	flagTokenPath string
+	flagNoClean   bool
 )
 
 // Exit codes for structured error reporting.
@@ -74,6 +76,10 @@ func runConvert(cmd *cobra.Command, _ []string) error {
 			return &ExitError{code: exitConversionErr, err: err}
 		}
 		return &ExitError{code: exitConversionErr, err: fmt.Errorf("conversion failed: %w", err)}
+	}
+
+	if !flagNoClean {
+		md = mdclean.Clean(md, flagImagesDir)
 	}
 
 	if flagOutput != "" {
@@ -156,6 +162,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&flagClientID, "client-id", "", "Azure AD application (client) ID (env: SP2MD_CLIENT_ID)")
 	rootCmd.PersistentFlags().StringVar(&flagTenantID, "tenant-id", "common", "Azure AD tenant ID (env: SP2MD_TENANT_ID)")
 	rootCmd.PersistentFlags().StringVar(&flagTokenPath, "token-path", "", "path to token cache file (default: ~/.config/sp2md/token.json)")
+	rootCmd.PersistentFlags().BoolVar(&flagNoClean, "no-clean", false, "disable markdown post-processing cleanup")
 }
 
 // Execute runs the root command.
