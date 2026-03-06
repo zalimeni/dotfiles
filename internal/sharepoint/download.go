@@ -248,7 +248,7 @@ func checkHTTPError(resp *http.Response) error {
 		return ErrNotFound
 	default:
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("Graph API error (HTTP %d): %s", resp.StatusCode, string(body))
+		return fmt.Errorf("graph API error (HTTP %d): %s", resp.StatusCode, string(body))
 	}
 }
 
