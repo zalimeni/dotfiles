@@ -392,8 +392,8 @@ func TestSanitizeFilename(t *testing.T) {
 		{"my file (1).docx", "my_file__1_.docx"},
 		{"../../etc/passwd", ".._.._etc_passwd"},
 		{"normal-file_v2.docx", "normal-file_v2.docx"},
-		{"..", ".."},
-		{"", "."},
+		{"..", "file"},
+		{"", "file"},
 	}
 
 	for _, tt := range tests {
