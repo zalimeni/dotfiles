@@ -403,6 +403,65 @@ func TestSanitizeFilename(t *testing.T) {
 	}
 }
 
+func TestCheckHTTPError(t *testing.T) {
+	tests := []struct {
+		name       string
+		statusCode int
+		body       []byte
+		wantErr    error
+		wantNil    bool
+		wantMsg    string
+	}{
+		{
+			name:       "200 returns nil",
+			statusCode: http.StatusOK,
+			body:       nil,
+			wantNil:    true,
+		},
+		{
+			name:       "401 returns ErrPermissionDenied",
+			statusCode: http.StatusUnauthorized,
+			body:       []byte(`{"error":"unauthorized"}`),
+			wantErr:    ErrPermissionDenied,
+		},
+		{
+			name:       "403 returns ErrPermissionDenied",
+			statusCode: http.StatusForbidden,
+			body:       []byte(`{"error":"forbidden"}`),
+			wantErr:    ErrPermissionDenied,
+		},
+		{
+			name:       "404 returns ErrNotFound",
+			statusCode: http.StatusNotFound,
+			body:       []byte(`{"error":"not found"}`),
+			wantErr:    ErrNotFound,
+		},
+		{
+			name:       "500 returns error with body content",
+			statusCode: http.StatusInternalServerError,
+			body:       []byte(`{"error":"internal server error"}`),
+			wantMsg:    `graph API error (HTTP 500): {"error":"internal server error"}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := checkHTTPError(tt.statusCode, tt.body)
+			if tt.wantNil {
+				assert.NoError(t, err)
+				return
+			}
+			require.Error(t, err)
+			if tt.wantErr != nil {
+				assert.ErrorIs(t, err, tt.wantErr)
+			}
+			if tt.wantMsg != "" {
+				assert.EqualError(t, err, tt.wantMsg)
+			}
+		})
+	}
+}
+
 func TestDownloadContextCancellation(t *testing.T) {
 	server := newGraphServer(t, []byte("content"))
 	defer server.Close()
