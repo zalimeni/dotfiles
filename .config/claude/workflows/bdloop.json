@@ -2,7 +2,7 @@
   "name": "bdloop-auto-approve",
   "description": "Auto-approve operations for bdloop workflow",
   "triggers": {
-    "skills": ["bdloop", "bdexecplan", "bdexecissue", "bdplan"]
+    "skills": ["bdloop", "bdreview", "bdexecplan", "bdexecissue", "bdplan"]
   },
   "permissions": {
     "autoApprove": true,

@@ -166,7 +166,8 @@
         "patterns": [
           "bdexecissue*",
           "bdexecplan*",
-          "bdplan*"
+          "bdplan*",
+          "bdreview*"
         ]
       },
       {

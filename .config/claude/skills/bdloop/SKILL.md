@@ -26,11 +26,12 @@ bdloop [scope]
   │   ├── Record iteration baseline (git rev-parse HEAD)
   │   ├── /bdexecplan [scope]
   │   ├── Check for changes since baseline (git log)
-  │   ├── Review iteration changes (review agent, scoped to diff)
-  │   ├── Evaluate findings:
-  │   │   ├── No Critical + No Recommendations → exit (success)
-  │   │   └── Has Critical or Recommendations → /bdplan [findings]
-  │   └── Verify new ready issues exist for next iteration
+  │   ├── /bdreview [ITER_BASELINE] Iteration [N]
+  │   │   ├── Review agent (scoped to diff)
+  │   │   ├── Categorize findings
+  │   │   ├── PASS → done, or NEEDS FIXES → /bdplan
+  │   │   └── Check ready work
+  │   └── Oscillation check (cross-iteration comparison)
   │
   └── Final summary report
 ```
@@ -114,70 +115,29 @@ git log $ITER_BASELINE..HEAD --oneline
 
 If no new changes exist since the iteration baseline, exit the loop — execution produced nothing to review.
 
-#### Step D: Review Iteration Changes
+#### Step D: Review and Plan Fixes
 
-Invoke the review agent scoped to only this iteration's changes:
-
-```
-Task(
-  description="Review iteration [N] changes",
-  subagent_type="review",
-  prompt="Review the code changes made since git commit [ITER_BASELINE].
-
-Use this command to see the diff:
-  git diff [ITER_BASELINE]..HEAD
-
-Use this command to see the commit log:
-  git log [ITER_BASELINE]..HEAD
-
-Review all changed files thoroughly for correctness, security, best practices, error handling, and architecture."
-)
-```
-
-#### Step E: Evaluate Review Findings
-
-Parse the review agent's response. Count findings by category:
-
-- **Critical** — must-fix issues (bugs, security, data integrity)
-- **Recommendations** — should-fix improvements (performance, architecture, best practices)
-- **Suggestions** — nice-to-have (informational only, do NOT trigger fixes)
-
-**Stopping condition: exit the loop if zero Critical AND zero Recommendations.**
-
-Output an evaluation card:
+Invoke `/bdreview` with the iteration baseline and label:
 
 ```
-┌─ REVIEW RESULT (Iteration [N]) ──────
-│ Critical:        [count]
-│ Recommendations: [count]
-│ Suggestions:     [count]
-│ Verdict:         [PASS / NEEDS FIXES]
-└───────────────────────────────────────
+Skill("bdreview", args="[ITER_BASELINE] Iteration [N]")
 ```
 
-If PASS, exit the loop.
+This handles: review agent invocation, finding categorization, result card output, `/bdplan` delegation for actionable findings, and ready-work check.
 
-#### Step F: Create Fix Issues
+Parse the review result card output from `/bdreview`:
+- If verdict is **PASS** (zero Critical + zero Recommendations), exit the loop.
+- If verdict is **NEEDS FIXES** but no new ready issues were created, exit the loop — there is nothing more to execute.
 
-If there are Critical or Recommendation findings, invoke `/bdplan` to create fix issues. Pass the review findings as the argument so bdplan can structure them into actionable issues:
+#### Step E: Oscillation Check
 
-```
-Skill("bdplan", args="Fix issues from review iteration [N]:
+If the findings in this iteration are substantially similar to the previous iteration's findings, exit the loop with a warning — fixes are not converging. Compare finding descriptions; if >50% overlap, treat as oscillating.
 
-[paste Critical and Recommendation findings here, not Suggestions]")
-```
+#### Step F: Verify Ready Work for Next Iteration
 
-#### Step G: Verify New Ready Work
+If `/bdreview` reported no new ready issues, exit the loop — nothing can progress.
 
-```bash
-bd ready
-```
-
-If no new ready issues were created (bdplan produced nothing actionable, or all new issues are blocked), exit the loop — there is nothing more to execute.
-
-**Oscillation check**: If the findings in this iteration are substantially similar to the previous iteration's findings, exit the loop with a warning — fixes are not converging. Compare finding descriptions; if >50% overlap, treat as oscillating.
-
-#### Step H: Continue
+#### Step G: Continue
 
 Loop back to Step A for the next iteration.
 
