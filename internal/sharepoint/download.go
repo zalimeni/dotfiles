@@ -177,8 +177,9 @@ func (c *Client) downloadFile(ctx context.Context, downloadURL, filename string)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if err := checkHTTPError(resp); err != nil {
-		return "", fmt.Errorf("downloading file: %w", err)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("downloading file: %w", checkHTTPError(resp.StatusCode, body))
 	}
 
 	// Create temp file with the original filename for clarity.
@@ -225,30 +226,31 @@ func (c *Client) graphGet(ctx context.Context, endpoint string) ([]byte, error) 
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if err := checkHTTPError(resp); err != nil {
-		return nil, err
-	}
-
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("reading response: %w", err)
+	}
+
+	if err := checkHTTPError(resp.StatusCode, body); err != nil {
+		return nil, err
 	}
 
 	return body, nil
 }
 
 // checkHTTPError maps Graph API error status codes to typed errors.
-func checkHTTPError(resp *http.Response) error {
+// Callers provide the status code and response body so that this function
+// does not consume resp.Body as a side effect.
+func checkHTTPError(statusCode int, body []byte) error {
 	switch {
-	case resp.StatusCode >= 200 && resp.StatusCode < 300:
+	case statusCode >= 200 && statusCode < 300:
 		return nil
-	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
+	case statusCode == http.StatusUnauthorized || statusCode == http.StatusForbidden:
 		return ErrPermissionDenied
-	case resp.StatusCode == http.StatusNotFound:
+	case statusCode == http.StatusNotFound:
 		return ErrNotFound
 	default:
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("graph API error (HTTP %d): %s", resp.StatusCode, string(body))
+		return fmt.Errorf("graph API error (HTTP %d): %s", statusCode, string(body))
 	}
 }
 
