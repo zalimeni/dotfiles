@@ -31,7 +31,15 @@ const (
 	// will read into memory. This guards against a misbehaving server
 	// sending an unbounded response that exhausts memory.
 	maxJSONResponseBytes = 1 << 20 // 1 MB
+
+	// slowDownIncrement is the interval increase (in seconds) applied
+	// when the server returns a "slow_down" error per RFC 8628 §3.5.
+	slowDownIncrement = 5 * time.Second
 )
+
+// errSlowDown signals that the authorization server requested the client
+// to increase its polling interval (RFC 8628 §3.5).
+var errSlowDown = errors.New("slow_down")
 
 // Config holds the parameters needed to perform device code authentication.
 type Config struct {
@@ -293,6 +301,10 @@ func pollForToken(ctx context.Context, cfg *Config, dc *deviceCodeResponse) (*To
 		}
 
 		tok, err := requestToken(ctx, cfg, endpoint, form)
+		if errors.Is(err, errSlowDown) {
+			interval += slowDownIncrement
+			continue
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -338,8 +350,8 @@ func requestToken(ctx context.Context, cfg *Config, endpoint string, form url.Va
 	case "authorization_pending":
 		return nil, nil
 	case "slow_down":
-		// Server asked us to back off; caller will wait interval again.
-		return nil, nil
+		// Server asked us to back off; caller must increase the interval.
+		return nil, errSlowDown
 	case "expired_token":
 		return nil, errors.New("device code expired; please try again")
 	default:
