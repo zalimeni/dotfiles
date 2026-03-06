@@ -419,6 +419,12 @@ func TestCheckHTTPError(t *testing.T) {
 			wantNil:    true,
 		},
 		{
+			name:       "204 returns nil",
+			statusCode: http.StatusNoContent,
+			body:       nil,
+			wantNil:    true,
+		},
+		{
 			name:       "401 returns ErrPermissionDenied",
 			statusCode: http.StatusUnauthorized,
 			body:       []byte(`{"error":"unauthorized"}`),
