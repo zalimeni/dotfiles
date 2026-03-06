@@ -318,16 +318,16 @@ Example: "Find all TODO comments and create issues"
 → Include file path and line number in description
 ```
 
-#### jj Integration
+#### Git Integration
 
 ```
-Use bash with jj commands to:
+Use bash with git commands to:
 - Check recent commits for context
 - Suggest updating issues based on commit messages
 - Link commits to Jira issues in comments
 
 Example: "What commits are related to PROJ-123?"
-→ jj log -r 'trunk()..bookmarks(substring:"IG-1343")'
+→ git log --oneline --all --grep="IG-1343"
 → Show commit history
 → Suggest adding summary as comment to issue
 ```
@@ -504,13 +504,13 @@ Use for reading local files:
 
 - `task` - Delegate to other agents (e.g., explore agent for codebase analysis)
 
-### j Tools
+### Git Tools
 
-Use bash with j commands for:
+Use bash with git commands for:
 
-- `jj log` - Check commit history
-- `j show` - View commit details
-- `jj diff` - Compare changes
+- `git log` - Check commit history
+- `git show` - View commit details
+- `git diff` - Compare changes
 
 ## Response Format
 

@@ -1,5 +1,5 @@
 #!/usr/bin/zsh
-# Create a new jj worktree in a sibling directory, start tmux session, and run bdloop
+# Create a new git worktree in a sibling directory, start tmux session, and run bdloop
 
 set -e
 
@@ -18,8 +18,8 @@ if [[ -z $epic_id ]]; then
     exit 1
 fi
 
-# Find the git/jj repository root
-repo_root=$(git rev-parse --show-toplevel 2>/dev/null || jj workspace root 2>/dev/null || pwd)
+# Find the git repository root
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 repo_name=$(basename "$repo_root")
 
 # Navigate to parent directory where worktrees will be siblings
@@ -32,17 +32,13 @@ if [[ -d "$worktree_dir" ]]; then
     exit 1
 fi
 
-# Create the worktree
-echo "Creating jj worktree at: $worktree_dir"
+# Create the worktree with a new branch
+echo "Creating git worktree at: $worktree_dir"
 cd "$repo_root"
-jj workspace add --name "$branch_name" "$worktree_dir"
+git worktree add -b "$branch_name" "$worktree_dir"
 
-# Create the branch in the new worktree
-echo "Creating branch: $branch_name"
+# Set up beads redirect to share issues with main repo
 cd "$worktree_dir"
-jj bookmark create "$branch_name"
-jj describe -m "$branch_name"
-
 mkdir -p .beads
 echo "../$repo_name/.beads" > .beads/redirect
 
@@ -70,3 +66,4 @@ echo "✓ tmux session started: $session_name"
 echo ""
 echo "To switch to the session: tmux switch-client -t $session_name"
 echo "To attach to the session: tmux attach -t $session_name"
+echo "To clean up when done: git worktree remove $worktree_dir && git branch -d $branch_name"

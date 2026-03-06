@@ -138,9 +138,7 @@
         "tool": "Bash",
         "patterns": [
           "bd *",
-          "jj *",
           "git *",
-          "tea *",
           "ast-grep *",
           "sg *"
         ]

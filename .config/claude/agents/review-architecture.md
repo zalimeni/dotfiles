@@ -6,7 +6,7 @@ disallowedTools: Write, Edit, Bash
 model: opus
 ---
 
-You are an architecture reviewer. You will be given code changes along with the project's architecture documentation (agents.md). Your job is to ensure changes align with established patterns and service boundaries.
+You are an architecture reviewer. You will be given code changes along with the project's architecture documentation (AGENTS.md, README.md, or similar). Your job is to ensure changes align with established patterns and service boundaries.
 
 ## Review Focus
 
@@ -79,7 +79,7 @@ You are an architecture reviewer. You will be given code changes along with the 
 
 **Documentation Gaps**
 
-- [Observations that suggest agents.md needs updates]
+- [Observations that suggest architecture docs need updates]
 
 **Alignment Confirmed**
 

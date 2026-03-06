@@ -1,7 +1,7 @@
 ---
 description: execute-review-fix loop until review passes
 argument-hint: [scope]
-allowed-tools: Skill, Task, Bash(bd:*), Bash(jj *)
+allowed-tools: Skill, Task, Bash(bd:*), Bash(git *)
 ---
 
 # BD Execute-Review-Fix Loop
@@ -20,12 +20,12 @@ Optional: epic ID or search term to scope which issues to work on. Passed throug
 
 ```
 bdloop [scope]
-  ├── Pre-loop: capture jj baseline, verify ready work exists
+  ├── Pre-loop: check clean tree, capture git baseline, verify ready work
   │
   ├── Iteration N:
-  │   ├── Record iteration baseline (jj log -r @ --no-graph -T 'change_id')
+  │   ├── Record iteration baseline (git rev-parse HEAD)
   │   ├── /bdexecplan [scope]
-  │   ├── Check for changes since baseline (jj log)
+  │   ├── Check for changes since baseline (git log)
   │   ├── Review iteration changes (review agent, scoped to diff)
   │   ├── Evaluate findings:
   │   │   ├── No Critical + No Recommendations → exit (success)
@@ -39,12 +39,25 @@ bdloop [scope]
 
 ### 1. Pre-Loop Setup
 
-#### Capture VCS Baseline
+#### Check for Clean Working Tree
 
-Record the current jj change ID before any work begins:
+Before starting, verify no uncommitted changes exist:
 
 ```bash
-jj log -r @ --no-graph -T 'change_id ++ "\n"'
+git status --porcelain
+```
+
+If the working tree is dirty:
+1. Warn the user: "Working tree has uncommitted changes."
+2. Ask whether to stash them (`git stash push -m "bdloop: stash before execution"`) or abort.
+3. Do NOT proceed with a dirty tree — bdexecissue makes commits, and uncommitted changes would be mixed in.
+
+#### Capture VCS Baseline
+
+Record the current git commit SHA before any work begins:
+
+```bash
+git rev-parse HEAD
 ```
 
 Store this as `LOOP_BASELINE` — used to scope the final summary.
@@ -65,10 +78,10 @@ Repeat until a stopping condition is met:
 
 #### Step A: Increment and Record Iteration Baseline
 
-Increment the iteration counter. Record the current jj change ID:
+Increment the iteration counter. Record the current git commit SHA:
 
 ```bash
-jj log -r @ --no-graph -T 'change_id ++ "\n"'
+git rev-parse HEAD
 ```
 
 Store as `ITER_BASELINE` for this iteration.
@@ -96,7 +109,7 @@ This runs all ready issues in the scope through `/bdexecissue`.
 After execution completes, check whether any new commits were produced:
 
 ```bash
-jj log -r '$ITER_BASELINE::@ ~ $ITER_BASELINE' --no-graph
+git log $ITER_BASELINE..HEAD --oneline
 ```
 
 If no new changes exist since the iteration baseline, exit the loop — execution produced nothing to review.
@@ -109,13 +122,13 @@ Invoke the review agent scoped to only this iteration's changes:
 Task(
   description="Review iteration [N] changes",
   subagent_type="review",
-  prompt="Review the code changes made since jj change ID [ITER_BASELINE].
+  prompt="Review the code changes made since git commit [ITER_BASELINE].
 
 Use this command to see the diff:
-  jj diff --from [ITER_BASELINE] --to @
+  git diff [ITER_BASELINE]..HEAD
 
 Use this command to see the commit log:
-  jj log -r '[ITER_BASELINE]::@'
+  git log [ITER_BASELINE]..HEAD
 
 Review all changed files thoroughly for correctness, security, best practices, error handling, and architecture."
 )
