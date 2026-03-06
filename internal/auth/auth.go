@@ -26,6 +26,11 @@ const (
 
 	deviceCodePath = "/oauth2/v2.0/devicecode"
 	tokenPath      = "/oauth2/v2.0/token"
+
+	// maxJSONResponseBytes is the maximum size of JSON API responses we
+	// will read into memory. This guards against a misbehaving server
+	// sending an unbounded response that exhausts memory.
+	maxJSONResponseBytes = 1 << 20 // 1 MB
 )
 
 // Config holds the parameters needed to perform device code authentication.
@@ -244,7 +249,7 @@ func requestDeviceCode(ctx context.Context, cfg *Config) (*deviceCodeResponse, e
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxJSONResponseBytes))
 	if err != nil {
 		return nil, fmt.Errorf("reading response: %w", err)
 	}
@@ -311,7 +316,7 @@ func requestToken(ctx context.Context, cfg *Config, endpoint string, form url.Va
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxJSONResponseBytes))
 	if err != nil {
 		return nil, fmt.Errorf("reading token response: %w", err)
 	}
@@ -368,7 +373,7 @@ func refreshToken(ctx context.Context, cfg *Config, refresh string) (*Token, err
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxJSONResponseBytes))
 	if err != nil {
 		return nil, fmt.Errorf("reading refresh response: %w", err)
 	}

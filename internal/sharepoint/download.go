@@ -24,6 +24,11 @@ const (
 	DefaultGraphBase = "https://graph.microsoft.com/v1.0"
 
 	defaultHTTPTimeout = 2 * time.Minute
+
+	// maxJSONResponseBytes is the maximum size of JSON API responses we
+	// will read into memory. This guards against a misbehaving server
+	// sending an unbounded response that exhausts memory.
+	maxJSONResponseBytes = 1 << 20 // 1 MB
 )
 
 // ErrPermissionDenied indicates the caller lacks access to the requested resource.
@@ -178,7 +183,7 @@ func (c *Client) downloadFile(ctx context.Context, downloadURL, filename string)
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		body, _ := io.ReadAll(resp.Body)
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxJSONResponseBytes))
 		return "", fmt.Errorf("downloading file: %w", checkHTTPError(resp.StatusCode, body))
 	}
 
@@ -226,7 +231,7 @@ func (c *Client) graphGet(ctx context.Context, endpoint string) ([]byte, error) 
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxJSONResponseBytes))
 	if err != nil {
 		return nil, fmt.Errorf("reading response: %w", err)
 	}
