@@ -37,6 +37,9 @@ var ErrPermissionDenied = errors.New("permission denied: insufficient access to 
 // ErrNotFound indicates the requested resource does not exist.
 var ErrNotFound = errors.New("not found: the SharePoint resource does not exist or has been deleted")
 
+// unsafeFilenameChars matches characters that are unsafe in filenames.
+var unsafeFilenameChars = regexp.MustCompile(`[^a-zA-Z0-9._-]`)
+
 // Client downloads documents from SharePoint via the Graph API.
 type Client struct {
 	// AccessToken is the Bearer token for Graph API requests.
@@ -307,8 +310,7 @@ func extractJSONString(body []byte, key string) (string, error) {
 // sanitizeFilename removes characters that are unsafe in filenames.
 // filepath.Base is applied as defense-in-depth against path traversal.
 func sanitizeFilename(name string) string {
-	re := regexp.MustCompile(`[^a-zA-Z0-9._-]`)
-	result := filepath.Base(re.ReplaceAllString(name, "_"))
+	result := filepath.Base(unsafeFilenameChars.ReplaceAllString(name, "_"))
 	if result == "." || result == ".." {
 		return "file"
 	}
