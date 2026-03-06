@@ -272,6 +272,70 @@ func TestAuthFailureError(t *testing.T) {
 	assert.Contains(t, err.Error(), "device code request failed")
 }
 
+func TestSlowDownIncreasesInterval(t *testing.T) {
+	// Server returns slow_down once, then authorization_pending once, then
+	// success. We verify the interval increases by checking that the total
+	// elapsed time accounts for the 5-second backoff increment.
+	var polls atomic.Int32
+	var pollTimes []time.Time
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/test-tenant/oauth2/v2.0/devicecode", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(deviceCodeResponse{
+			DeviceCode:      "dc",
+			UserCode:        "CODE",
+			VerificationURI: "https://example.com",
+			ExpiresIn:       300,
+			Interval:        1, // 1-second base interval
+			Message:         "Enter CODE",
+		})
+	})
+	mux.HandleFunc("/test-tenant/oauth2/v2.0/token", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		count := int(polls.Add(1))
+		pollTimes = append(pollTimes, time.Now())
+
+		switch count {
+		case 1:
+			// First poll: slow_down
+			_ = json.NewEncoder(w).Encode(tokenResponse{Error: "slow_down"})
+		case 2:
+			// Second poll: authorization_pending (interval should now be 6s)
+			_ = json.NewEncoder(w).Encode(tokenResponse{Error: "authorization_pending"})
+		default:
+			// Third poll: success
+			_ = json.NewEncoder(w).Encode(tokenResponse{
+				AccessToken:  "slow-down-token",
+				RefreshToken: "slow-down-refresh",
+				ExpiresIn:    3600,
+				Scope:        DefaultScope,
+			})
+		}
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	cfg := testConfig(t, server.URL)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	tok, err := Authenticate(ctx, cfg)
+	require.NoError(t, err)
+	assert.Equal(t, "slow-down-token", tok.AccessToken)
+	assert.Equal(t, 3, int(polls.Load()), "expected exactly 3 polls")
+
+	// After slow_down, the interval should have increased from 1s to 6s.
+	// The gap between poll 2 and poll 3 should be >= 6s (the increased
+	// interval). Allow some tolerance for scheduling jitter.
+	if len(pollTimes) == 3 {
+		gap := pollTimes[2].Sub(pollTimes[1])
+		assert.GreaterOrEqual(t, gap.Seconds(), 5.5,
+			"interval after slow_down should be at least ~6s, got %v", gap)
+	}
+}
+
 func TestExpiredDeviceCode(t *testing.T) {
 	// Server always returns authorization_pending. We set ExpiresIn to 1
 	// so the device code expires almost immediately.
