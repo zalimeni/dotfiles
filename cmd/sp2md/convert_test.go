@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	pflag "github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -137,4 +138,10 @@ func resetFlags() {
 	flagTenantID = "common"
 	flagTokenPath = ""
 	flagNoClean = false
+
+	// Reset cobra's internal Changed state for each persistent flag so that
+	// subsequent tests using cmd.Flags().Changed() get accurate results.
+	rootCmd.PersistentFlags().VisitAll(func(f *pflag.Flag) {
+		f.Changed = false
+	})
 }

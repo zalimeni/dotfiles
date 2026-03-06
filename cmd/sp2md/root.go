@@ -37,7 +37,8 @@ var rootCmd = &cobra.Command{
 	Use:   "sp2md",
 	Short: "Convert SharePoint documents to Markdown",
 	Long:  "sp2md converts SharePoint .aspx pages and documents into clean Markdown files.",
-	RunE:  runConvert,
+	PersistentPreRunE: applyEnvDefaults,
+	RunE:              runConvert,
 }
 
 func runConvert(cmd *cobra.Command, _ []string) error {
@@ -165,14 +166,24 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&flagNoClean, "no-clean", false, "disable markdown post-processing cleanup")
 }
 
+// applyEnvDefaults applies environment variable fallbacks for auth flags.
+// It runs after cobra has parsed flags, so cmd.Flags().Changed() accurately
+// reflects whether the user explicitly provided a value on the command line.
+func applyEnvDefaults(cmd *cobra.Command, _ []string) error {
+	if !cmd.Flags().Changed("client-id") {
+		if v := os.Getenv("SP2MD_CLIENT_ID"); v != "" {
+			flagClientID = v
+		}
+	}
+	if !cmd.Flags().Changed("tenant-id") {
+		if v := os.Getenv("SP2MD_TENANT_ID"); v != "" {
+			flagTenantID = v
+		}
+	}
+	return nil
+}
+
 // Execute runs the root command.
 func Execute() error {
-	// Allow environment variables to set defaults for auth flags.
-	if v := os.Getenv("SP2MD_CLIENT_ID"); v != "" && flagClientID == "" {
-		flagClientID = v
-	}
-	if v := os.Getenv("SP2MD_TENANT_ID"); v != "" && flagTenantID == "" {
-		flagTenantID = v
-	}
 	return rootCmd.Execute()
 }
