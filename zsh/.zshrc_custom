@@ -1,0 +1,19 @@
+# Zsh-specific config — sourced by ~/.zshrc
+# All env vars, aliases, and functions live in system/
+
+cd ~/workspace
+
+# History
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_IGNORE_SPACE
+setopt HIST_SAVE_NO_DUPS
+setopt HIST_FIND_NO_DUPS
+setopt INC_APPEND_HISTORY
+HISTSIZE=10000000
+SAVEHIST=10000000
+
+# Source dotfiles (order matters: env first, then aliases/functions)
+DOTFILES_DIR="$HOME/workspace/dotfiles"
+for DOTFILE in "$DOTFILES_DIR"/system/.{env,alias,function,private_env,private_alias,private_function,work_env,work_alias,work_function}; do
+  [[ -f "$DOTFILE" ]] && source "$DOTFILE"
+done
