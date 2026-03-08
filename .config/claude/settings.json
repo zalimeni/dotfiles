@@ -1,7 +1,4 @@
 {
-  "env": {
-    "AWS_PROFILE": "sandbox_bedrock"
-  },
   "permissions": {
     "allow": [
       "Read(file_path:/Users/michael.zalimeni/workspace/**)",

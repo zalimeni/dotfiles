@@ -23,7 +23,7 @@ colors() {
 }
 
 # Print all aliases
-aliases() { bat $HOME/workspace/dotfiles/system/.alias; }
+aliases() { bat "${DOTFILES_DIR:-$HOME/workspace/dotfiles}/system/.alias"; }
 
 # Throwaway Go project in a tmux session
 tmpgo() {
