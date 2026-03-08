@@ -1,0 +1,346 @@
+#!/usr/bin/env python3
+"""
+memory — A local RAG memory store backed by SQLite + FTS5.
+
+Usage:
+    memory add    --content "..." [--tags "t1,t2"] [--source "..."]
+    memory search --query "..."   [--tags "t1,t2"] [--limit N] [--threshold FLOAT]
+    memory list   [--tags "t1,t2"] [--limit N] [--offset N]
+    memory get    --id ID
+    memory delete --id ID
+    memory tags
+    memory stats
+    memory export [--format json|csv]
+    memory init
+
+The database lives at $MEMORY_DB or ~/.config/claude/memory/memory.db
+"""
+
+import argparse
+import csv
+import io
+import json
+import os
+import sqlite3
+import sys
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+DEFAULT_DB = os.path.expanduser("~/.config/claude/memory/memory.db")
+DB_PATH = os.environ.get("MEMORY_DB", DEFAULT_DB)
+
+SCHEMA_VERSION = 1
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS meta (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS memories (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    content    TEXT    NOT NULL,
+    source     TEXT    DEFAULT '',
+    tags       TEXT    DEFAULT '',
+    created_at TEXT    NOT NULL,
+    updated_at TEXT    NOT NULL
+);
+
+CREATE VIRTUAL TABLE IF NOT EXISTS memories_fts USING fts5(
+    content,
+    tags,
+    source,
+    content='memories',
+    content_rowid='id',
+    tokenize='porter unicode61'
+);
+
+-- Triggers to keep the FTS index in sync with the main table.
+CREATE TRIGGER IF NOT EXISTS memories_ai AFTER INSERT ON memories BEGIN
+    INSERT INTO memories_fts(rowid, content, tags, source)
+    VALUES (new.id, new.content, new.tags, new.source);
+END;
+
+CREATE TRIGGER IF NOT EXISTS memories_ad AFTER DELETE ON memories BEGIN
+    INSERT INTO memories_fts(memories_fts, rowid, content, tags, source)
+    VALUES ('delete', old.id, old.content, old.tags, old.source);
+END;
+
+CREATE TRIGGER IF NOT EXISTS memories_au AFTER UPDATE ON memories BEGIN
+    INSERT INTO memories_fts(memories_fts, rowid, content, tags, source)
+    VALUES ('delete', old.id, old.content, old.tags, old.source);
+    INSERT INTO memories_fts(rowid, content, tags, source)
+    VALUES (new.id, new.content, new.tags, new.source);
+END;
+
+CREATE INDEX IF NOT EXISTS idx_memories_tags ON memories(tags);
+CREATE INDEX IF NOT EXISTS idx_memories_created ON memories(created_at);
+"""
+
+
+def now_iso():
+    return datetime.now(timezone.utc).isoformat()
+
+
+def get_db():
+    """Open (and optionally initialize) the memory database."""
+    path = Path(DB_PATH)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    needs_init = not path.exists() or path.stat().st_size == 0
+    conn = sqlite3.connect(str(path))
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA foreign_keys=ON")
+    if needs_init:
+        conn.executescript(SCHEMA)
+        conn.execute(
+            "INSERT OR REPLACE INTO meta(key, value) VALUES (?, ?)",
+            ("schema_version", str(SCHEMA_VERSION)),
+        )
+        conn.commit()
+    return conn
+
+
+def cmd_init(_args):
+    """Initialize (or reinitialize) the database."""
+    conn = get_db()
+    conn.executescript(SCHEMA)
+    conn.execute(
+        "INSERT OR REPLACE INTO meta(key, value) VALUES (?, ?)",
+        ("schema_version", str(SCHEMA_VERSION)),
+    )
+    conn.commit()
+    conn.close()
+    print(json.dumps({"ok": True, "db": DB_PATH}))
+
+
+def cmd_add(args):
+    """Add a new memory."""
+    conn = get_db()
+    ts = now_iso()
+    tags = ",".join(t.strip() for t in args.tags.split(",") if t.strip()) if args.tags else ""
+    cur = conn.execute(
+        "INSERT INTO memories(content, source, tags, created_at, updated_at) VALUES (?,?,?,?,?)",
+        (args.content, args.source or "", tags, ts, ts),
+    )
+    conn.commit()
+    row_id = cur.lastrowid
+    conn.close()
+    print(json.dumps({"ok": True, "id": row_id, "created_at": ts}))
+
+
+def cmd_search(args):
+    """Full-text search with BM25 ranking, optional tag filter."""
+    conn = get_db()
+    limit = args.limit or 5
+    threshold = args.threshold if args.threshold is not None else -100.0  # permissive default
+
+    # Build FTS5 match query
+    # The bm25() function returns negative values (closer to 0 = more relevant)
+    query = args.query
+
+    params = [query, limit]
+
+    tag_filter = ""
+    if args.tags:
+        tag_list = [t.strip() for t in args.tags.split(",") if t.strip()]
+        tag_clauses = " AND ".join(
+            "m.tags LIKE ?" for _ in tag_list
+        )
+        tag_filter = f"AND {tag_clauses}"
+        params = [query] + [f"%{t}%" for t in tag_list] + [limit]
+
+    sql = f"""
+        SELECT m.id, m.content, m.source, m.tags, m.created_at, m.updated_at,
+               bm25(memories_fts, 5.0, 2.0, 1.0) AS rank
+        FROM memories_fts fts
+        JOIN memories m ON m.id = fts.rowid
+        WHERE memories_fts MATCH ?
+        {tag_filter}
+        ORDER BY rank
+        LIMIT ?
+    """
+    rows = conn.execute(sql, params).fetchall()
+    conn.close()
+
+    results = []
+    for r in rows:
+        results.append({
+            "id": r["id"],
+            "content": r["content"],
+            "source": r["source"],
+            "tags": r["tags"],
+            "rank": round(r["rank"], 4),
+            "created_at": r["created_at"],
+            "updated_at": r["updated_at"],
+        })
+    print(json.dumps({"ok": True, "count": len(results), "results": results}))
+
+
+def cmd_list(args):
+    """List memories, optionally filtered by tags."""
+    conn = get_db()
+    limit = args.limit or 20
+    offset = args.offset or 0
+
+    if args.tags:
+        tag_list = [t.strip() for t in args.tags.split(",") if t.strip()]
+        clauses = " AND ".join("tags LIKE ?" for _ in tag_list)
+        params = [f"%{t}%" for t in tag_list] + [limit, offset]
+        sql = f"SELECT * FROM memories WHERE {clauses} ORDER BY created_at DESC LIMIT ? OFFSET ?"
+    else:
+        params = [limit, offset]
+        sql = "SELECT * FROM memories ORDER BY created_at DESC LIMIT ? OFFSET ?"
+
+    rows = conn.execute(sql, params).fetchall()
+    conn.close()
+    results = [dict(r) for r in rows]
+    print(json.dumps({"ok": True, "count": len(results), "results": results}))
+
+
+def cmd_get(args):
+    """Get a single memory by ID."""
+    conn = get_db()
+    row = conn.execute("SELECT * FROM memories WHERE id = ?", (args.id,)).fetchone()
+    conn.close()
+    if row:
+        print(json.dumps({"ok": True, "memory": dict(row)}))
+    else:
+        print(json.dumps({"ok": False, "error": f"Memory {args.id} not found"}))
+        sys.exit(1)
+
+
+def cmd_delete(args):
+    """Delete a memory by ID."""
+    conn = get_db()
+    cur = conn.execute("DELETE FROM memories WHERE id = ?", (args.id,))
+    conn.commit()
+    conn.close()
+    if cur.rowcount:
+        print(json.dumps({"ok": True, "deleted": args.id}))
+    else:
+        print(json.dumps({"ok": False, "error": f"Memory {args.id} not found"}))
+        sys.exit(1)
+
+
+def cmd_tags(_args):
+    """List all unique tags with counts."""
+    conn = get_db()
+    rows = conn.execute("SELECT tags FROM memories WHERE tags != ''").fetchall()
+    conn.close()
+    tag_counts = {}
+    for r in rows:
+        for t in r["tags"].split(","):
+            t = t.strip()
+            if t:
+                tag_counts[t] = tag_counts.get(t, 0) + 1
+    sorted_tags = sorted(tag_counts.items(), key=lambda x: -x[1])
+    print(json.dumps({"ok": True, "tags": [{"tag": t, "count": c} for t, c in sorted_tags]}))
+
+
+def cmd_stats(_args):
+    """Show database statistics."""
+    conn = get_db()
+    total = conn.execute("SELECT COUNT(*) as c FROM memories").fetchone()["c"]
+    tags_row = conn.execute("SELECT tags FROM memories WHERE tags != ''").fetchall()
+    tag_set = set()
+    for r in tags_row:
+        for t in r["tags"].split(","):
+            t = t.strip()
+            if t:
+                tag_set.add(t)
+
+    sources = conn.execute(
+        "SELECT source, COUNT(*) as c FROM memories GROUP BY source ORDER BY c DESC"
+    ).fetchall()
+
+    oldest = conn.execute("SELECT MIN(created_at) as ts FROM memories").fetchone()["ts"]
+    newest = conn.execute("SELECT MAX(created_at) as ts FROM memories").fetchone()["ts"]
+
+    db_size = Path(DB_PATH).stat().st_size if Path(DB_PATH).exists() else 0
+    conn.close()
+
+    print(json.dumps({
+        "ok": True,
+        "total_memories": total,
+        "unique_tags": len(tag_set),
+        "sources": [{"source": s["source"] or "(none)", "count": s["c"]} for s in sources],
+        "oldest": oldest,
+        "newest": newest,
+        "db_size_bytes": db_size,
+    }))
+
+
+def cmd_export(args):
+    """Export all memories as JSON or CSV."""
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM memories ORDER BY created_at").fetchall()
+    conn.close()
+
+    fmt = args.format or "json"
+    if fmt == "json":
+        print(json.dumps([dict(r) for r in rows], indent=2))
+    elif fmt == "csv":
+        buf = io.StringIO()
+        writer = csv.writer(buf)
+        writer.writerow(["id", "content", "source", "tags", "created_at", "updated_at"])
+        for r in rows:
+            writer.writerow([r["id"], r["content"], r["source"], r["tags"], r["created_at"], r["updated_at"]])
+        print(buf.getvalue())
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Local RAG memory store")
+    sub = parser.add_subparsers(dest="command")
+
+    p_init = sub.add_parser("init", help="Initialize the database")
+    p_init.set_defaults(func=cmd_init)
+
+    p_add = sub.add_parser("add", help="Add a new memory")
+    p_add.add_argument("--content", required=True, help="Memory content text")
+    p_add.add_argument("--tags", default="", help="Comma-separated tags")
+    p_add.add_argument("--source", default="", help="Source context (file, url, conversation)")
+    p_add.set_defaults(func=cmd_add)
+
+    p_search = sub.add_parser("search", help="Full-text search memories")
+    p_search.add_argument("--query", required=True, help="Search query")
+    p_search.add_argument("--tags", default="", help="Filter by tags (comma-separated)")
+    p_search.add_argument("--limit", type=int, default=5, help="Max results (default 5)")
+    p_search.add_argument("--threshold", type=float, default=None, help="BM25 score threshold")
+    p_search.set_defaults(func=cmd_search)
+
+    p_list = sub.add_parser("list", help="List memories")
+    p_list.add_argument("--tags", default="", help="Filter by tags (comma-separated)")
+    p_list.add_argument("--limit", type=int, default=20, help="Max results")
+    p_list.add_argument("--offset", type=int, default=0, help="Offset for pagination")
+    p_list.set_defaults(func=cmd_list)
+
+    p_get = sub.add_parser("get", help="Get a memory by ID")
+    p_get.add_argument("--id", type=int, required=True, help="Memory ID")
+    p_get.set_defaults(func=cmd_get)
+
+    p_del = sub.add_parser("delete", help="Delete a memory by ID")
+    p_del.add_argument("--id", type=int, required=True, help="Memory ID to delete")
+    p_del.set_defaults(func=cmd_delete)
+
+    p_tags = sub.add_parser("tags", help="List all tags with counts")
+    p_tags.set_defaults(func=cmd_tags)
+
+    p_stats = sub.add_parser("stats", help="Show database statistics")
+    p_stats.set_defaults(func=cmd_stats)
+
+    p_export = sub.add_parser("export", help="Export all memories")
+    p_export.add_argument("--format", choices=["json", "csv"], default="json")
+    p_export.set_defaults(func=cmd_export)
+
+    args = parser.parse_args()
+    if not args.command:
+        parser.print_help()
+        sys.exit(1)
+
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()
