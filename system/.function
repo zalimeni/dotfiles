@@ -1,52 +1,34 @@
-#! /usr/bin/zsh
+# General functions — sourced by zsh/.zshrc_custom
 
-# mk will create directories that don't exist yet, the only arg necessary is the directory path
-mk() {
-	mkdir -p "$@"
-}
+# Directory helpers
+mk() { mkdir -p "$@"; }
+mkcd() { mkdir -p "$@" && cd "$@"; }
+mkfile() { mkdir -p $(dirname "$1") && touch "$1"; }
 
-# mkcd will create directories that don't exist yet, the only arg necessary is the file path and cd to the newly created directory
-mkcd() {
-	mkdir -p "$@" && cd "$@"
-}
-
-# mkfile will create a file if it doesn't exist yet and create required directories if they don't exist, the only arg necessary is the file path
-mkfile() {
-	mkdir -p $(dirname "$1") && touch "$1"
-}
-
-# extract will extract the contents of an archive file, the only arg necessary is the file path
-extract() {
-	tar -xvf "$1"
-}
-
-# compress will compress the contents of a directory, the first arg is the output file and the second arg is the directory to compress
-compress() {
-	tar -czvf "$1" "$2"
-}
-
+# Archive
+extract() { tar -xvf "$1"; }
+compress() { tar -czvf "$1" "$2"; }
 
 # Show 256 TERM colors
 colors() {
-	local X=$(tput op)
-	local Y=$(printf %$((COLUMNS - 6))s)
-	for i in {0..256}; do
-		o=00$i
-		echo -e ${o:${#o}-3:3} $(
-			tput setaf $i
-			tput setab $i
-		)${Y// /=}$X
-	done
+  local X=$(tput op)
+  local Y=$(printf %$((COLUMNS - 6))s)
+  for i in {0..256}; do
+    o=00$i
+    echo -e ${o:${#o}-3:3} $(
+      tput setaf $i
+      tput setab $i
+    )${Y// /=}$X
+  done
 }
 
-# print all aliases
-aliases() {
-	bat $HOME/.dotfiles/system/.alias
-}
+# Print all aliases
+aliases() { bat $HOME/workspace/dotfiles/system/.alias; }
 
+# Throwaway Go project in a tmux session
 tmpgo() {
   tempdir=$(mktemp -d)
-  (cd "$tempdir" && go mod init "github.com/jm96441n/tempdir" && touch "main.go" && go mod tidy)
+  (cd "$tempdir" && go mod init "github.com/zalimeni/tempdir" && touch "main.go" && go mod tidy)
   echo "package main
 
 import \"fmt\"
@@ -57,3 +39,38 @@ func main() {
 " > "$tempdir/main.go"
   tmux-sessionizer "$tempdir"
 }
+
+# Git clone shorthand
+clone() { git clone git@github.com:${1}.git; }
+
+# Git canary branch
+make-canary() {
+  CANARY_BRANCH="canary/$(git branch --show-current)"
+  git branch -D ${CANARY_BRANCH} 2>/dev/null
+  git checkout -b ${CANARY_BRANCH}
+}
+
+# Docker helpers
+dcleanup() {
+  docker image prune -a --filter "until=24h"
+  docker container prune --filter "until=24h"
+  docker volume prune --filter "label!=prod-tools-sso"
+}
+
+copy-from-docker() {
+  DOCKER_IMAGE=$1
+  SOURCE_FILEPATH=$2
+  DEST_FILEPATH=$3
+  DOCKER_PLATFORM=${4:-linux/amd64}
+  docker cp $(docker create --name tmp-cp --platform ${DOCKER_PLATFORM} ${DOCKER_IMAGE}):${SOURCE_FILEPATH} ${DEST_FILEPATH} || true; docker rm tmp-cp
+}
+
+run-in-docker() {
+  DOCKER_IMAGE=$1
+  DOCKER_PLATFORM=${2}
+  docker run -it --rm --platform ${DOCKER_PLATFORM} -v "$(pwd):/home/test" -w "/home/test" ${DOCKER_IMAGE} ${@:3}
+}
+
+# Maven
+mvn-version-set() { mvn versions:set -DnewVersion=$1 -DgenerateBackupPoms=false; }
+

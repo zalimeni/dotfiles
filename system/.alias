@@ -1,6 +1,6 @@
-#!/usr/bin/zsh
+# General aliases — sourced by zsh/.zshrc_custom
 
-# Shortcuts
+# Shell
 alias reload="exec zsh"
 
 # Directory traversal
@@ -15,30 +15,40 @@ alias lt='eza --tree'
 alias ltl='eza --tree -L'
 alias lr='eza --recurse'
 
-# Rails Aliases
-alias be="bundle exec"
-
-# cht.sh
-alias cht="tmux-cht"
-
-
-# Fix grep to use color and show line numbers
-alias fgrep="fgrep --color=auto"
-alias egrep="egrep --color=auto"
-
-# Map vim to use neovim
+# Editor
+alias vim="nvim"
+alias vi="nvim"
 alias v="nvim"
 
-# useful shortcuts for editing config files
-alias zr="vim ~/.dotfiles/runcom/.zshrc"
-alias txr="vim ~/.dotfiles/runcom/.tmux.conf"
+# Ripgrep
+alias rg="rg --type-add 'gomod:go.mod' --type-add 'web:*.{html,css,js}'"
 
-# Named Directories
-hash -d projects=$HOME/Projects
-hash -d dot=$HOME/.dotfiles
+# Tmux
+alias tmux="TERM=screen-256color-bce tmux"
+alias mux="tmuxinator"
 
-alias projects=~projects
-alias dot=~dot
+# UUID
+alias uuidgen='uuidgen | tr "[:upper:]" "[:lower:]"'
 
-# common typos
+# Git
+alias gc="git checkout"
+alias gria="git ria"
+alias grial="git rial"
+alias gcm="git checkout main 2>/dev/null || git checkout master"
+alias glg="git log --graph --abbrev-commit --decorate --date=relative --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)' --all"
+alias gcf="git commit --fixup HEAD"
+alias gaf="git add . && gcf"
+alias checkout='git checkout $(git branch --sort=-committerdate | fzf --border=rounded --margin=50,5,5,2)'
 alias gaap="gapa"
+
+# Kubernetes
+alias kc=kubectl
+alias k=kubectl
+
+# Go
+alias yaegi='rlwrap yaegi'
+
+# Maven
+alias mci="mvn clean install"
+alias mcist="mvn clean install -DskipTests"
+

@@ -1,6 +1,9 @@
 system/.private_env
 system/.private_alias
 system/.private_function
+system/.work_env
+system/.work_alias
+system/.work_function
 
 **/packer_compiled.lua
 

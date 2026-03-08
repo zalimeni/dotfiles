@@ -1,5 +1,47 @@
 {
-  "model": "anthropic.claude-opus-4-6-v1",
+  "env": {
+    "AWS_PROFILE": "sandbox_bedrock"
+  },
+  "permissions": {
+    "allow": [
+      "Read(file_path:/Users/michael.zalimeni/workspace/**)",
+      "Edit(file_path:/Users/michael.zalimeni/workspace/**)",
+      "Write(file_path:/Users/michael.zalimeni/workspace/**)",
+      "Glob(path:/Users/michael.zalimeni/workspace/**)",
+      "Grep(path:/Users/michael.zalimeni/workspace/**)",
+      "Bash(bd *)",
+      "Bash(git *)",
+      "Bash(gh *)",
+      "Bash(ls *)",
+      "Bash(pwd)",
+      "Bash(make *)",
+      "Bash(go *)",
+      "Bash(golangci-lint *)",
+      "Bash(ast-grep *)",
+      "Bash(sg *)",
+      "Bash(rg *)",
+      "Bash(ripgrep *)",
+      "Bash(date *)",
+      "Bash(echo *)",
+      "Bash(cat *)",
+      "Bash(mkdir *)",
+      "Bash(wc *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(sort *)",
+      "Bash(grep *)",
+      "Bash(tr *)",
+      "Skill(skill:bdagent)",
+      "Skill(skill:bdagent-cleanup)",
+      "Skill(skill:bdexecissue)",
+      "Skill(skill:bdexecplan)",
+      "Skill(skill:bdloop)",
+      "Skill(skill:bdplan)",
+      "Skill(skill:bdreview)",
+      "Skill(skill:bdstatus)"
+    ]
+  },
+  "model": "opus",
   "hooks": {
     "SessionStart": [
       {
@@ -7,7 +49,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/johnmaguire/.claude/hooks/peon-ping/peon.sh",
+            "command": "/Users/michael.zalimeni/.claude/hooks/peon-ping/peon.sh",
             "timeout": 10
           }
         ]
@@ -19,7 +61,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/johnmaguire/.claude/hooks/peon-ping/peon.sh",
+            "command": "/Users/michael.zalimeni/.claude/hooks/peon-ping/peon.sh",
             "timeout": 10,
             "async": true
           }
@@ -32,7 +74,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/johnmaguire/.claude/hooks/peon-ping/peon.sh",
+            "command": "/Users/michael.zalimeni/.claude/hooks/peon-ping/peon.sh",
             "timeout": 10,
             "async": true
           }
@@ -45,18 +87,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/johnmaguire/.claude/hooks/peon-ping/peon.sh",
-            "timeout": 10,
-            "async": true
-          }
-        ]
-      },
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/home/johnmaguire/.claude/hooks/peon-ping/scripts/hook-handle-use.sh",
+            "command": "/Users/michael.zalimeni/.claude/hooks/peon-ping/peon.sh",
             "timeout": 10,
             "async": true
           }
@@ -69,7 +100,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/johnmaguire/.claude/hooks/peon-ping/peon.sh",
+            "command": "/Users/michael.zalimeni/.claude/hooks/peon-ping/peon.sh",
             "timeout": 10,
             "async": true
           }
@@ -82,7 +113,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/johnmaguire/.claude/hooks/peon-ping/peon.sh",
+            "command": "/Users/michael.zalimeni/.claude/hooks/peon-ping/peon.sh",
             "timeout": 10,
             "async": true
           }
@@ -95,7 +126,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/johnmaguire/.claude/hooks/peon-ping/peon.sh",
+            "command": "/Users/michael.zalimeni/.claude/hooks/peon-ping/peon.sh",
             "timeout": 10,
             "async": true
           }
@@ -108,7 +139,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/johnmaguire/.claude/hooks/peon-ping/peon.sh",
+            "command": "/Users/michael.zalimeni/.claude/hooks/peon-ping/peon.sh",
             "timeout": 10,
             "async": true
           }
@@ -121,7 +152,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/johnmaguire/.claude/hooks/peon-ping/peon.sh",
+            "command": "/Users/michael.zalimeni/.claude/hooks/peon-ping/peon.sh",
             "timeout": 10,
             "async": true
           }
@@ -130,52 +161,24 @@
     ]
   },
   "enabledPlugins": {
-    "gopls-lsp@claude-plugins-official": true
+    "context7@claude-plugins-official": true,
+    "github@claude-plugins-official": false,
+    "code-review@claude-plugins-official": false,
+    "feature-dev@claude-plugins-official": false,
+    "gopls-lsp@claude-plugins-official": true,
+    "ralph-loop@claude-plugins-official": false,
+    "beads@beads-marketplace": true,
+    "spec-interviewer-planner@leefowlercu-agent-kit": false,
+    "playwright@claude-plugins-official": false,
+    "commit-commands@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true
   },
-  "alwaysAllow": {
-    "tools": [
-      {
-        "tool": "Bash",
-        "patterns": [
-          "bd *",
-          "git *",
-          "ast-grep *",
-          "sg *"
-        ]
-      },
-      {
-        "tool": "Read",
-        "patterns": [
-          "*"
-        ]
-      },
-      {
-        "tool": "Edit",
-        "patterns": [
-          "*"
-        ]
-      },
-      {
-        "tool": "Write",
-        "patterns": [
-          "*"
-        ]
-      },
-      {
-        "tool": "Skill",
-        "patterns": [
-          "bdexecissue*",
-          "bdexecplan*",
-          "bdplan*",
-          "bdreview*"
-        ]
-      },
-      {
-        "tool": "Task",
-        "patterns": [
-          "*"
-        ]
-      }
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "additionalWritePaths": [
+      "/Users/michael.zalimeni/go/pkg/mod/cache",
+      "/Users/michael.zalimeni/Library/Caches"
     ]
   },
   "skipDangerousModePermissionPrompt": true

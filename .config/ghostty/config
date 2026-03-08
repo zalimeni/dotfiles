@@ -9,7 +9,7 @@ font-family = FiraCode Nerd Font Mono
 
 # shell-integration = zsh
 
-command = ~/.nix-profile/bin/zsh
+command = /bin/zsh
 
 ## color theme - everforest
 
