@@ -25,26 +25,24 @@ everforest_colors terminal color palette reference
 
 ## Setup
 
-Clone the repo:
-
-```
-git clone git@github.com:zalimeni/dotfiles.git ~/workspace/dotfiles
-```
-
-Symlink configs as needed:
+Clone the repo and run the installer:
 
 ```sh
-# Claude Code
-ln -sf ~/workspace/dotfiles/.config/claude/CLAUDE.md ~/.claude/CLAUDE.md
-ln -sf ~/workspace/dotfiles/.config/claude/settings.json ~/.claude/settings.json
-
-# bat
-ln -sf ~/workspace/dotfiles/bat ~/.config/bat
-bat cache --build
-
-# git
-# Edit ~/.gitconfig to source from this repo, or symlink directly
+git clone git@github.com:zalimeni/dotfiles.git ~/dotfiles
+cd ~/dotfiles && ./install.sh
 ```
+
+The installer detects macOS vs Linux and sets up Claude Code config, git identity,
+shell config, and bat theme. It's idempotent — safe to re-run.
+
+For Claude Code online sandboxes, see [Sandbox setup](#sandbox-setup).
+
+### Sandbox setup
+
+In the Claude Environments UI, set:
+
+- **Setup command**: `git clone https://github.com/zalimeni/dotfiles.git ~/dotfiles && ~/dotfiles/install.sh`
+- **Environment variables**: `CONTEXT7_KEY`, plus any secrets from `system/.private_env`
 
 ## Tools
 

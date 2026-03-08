@@ -1,8 +1,6 @@
 # Zsh-specific config — sourced by ~/.zshrc
 # All env vars, aliases, and functions live in system/
 
-cd ~/workspace
-
 # History
 setopt HIST_IGNORE_ALL_DUPS
 setopt HIST_IGNORE_SPACE
@@ -13,7 +11,12 @@ HISTSIZE=10000000
 SAVEHIST=10000000
 
 # Source dotfiles (order matters: env first, then aliases/functions)
-DOTFILES_DIR="$HOME/workspace/dotfiles"
+# Resolve DOTFILES_DIR from this file's location (works whether sourced directly or via symlink)
+(){
+  local src="${(%):-%x}"
+  [[ -L "$src" ]] && src="$(readlink -f "$src")"
+  DOTFILES_DIR="$(cd "$(dirname "$src")/.." && pwd)"
+}
 for DOTFILE in "$DOTFILES_DIR"/system/.{env,alias,function,private_env,private_alias,private_function,work_env,work_alias,work_function}; do
   [[ -f "$DOTFILE" ]] && source "$DOTFILE"
 done
