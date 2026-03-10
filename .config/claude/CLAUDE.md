@@ -23,6 +23,7 @@
 - **Changes**: Context-dependent scope (minimal for bugs/urgent, broader for features)
 - **Commits**: Conventional Commits format
 - **PRs**: Always create draft PRs (`gh pr create --draft`) unless explicitly told otherwise
+- **Test Plans**: Before opening a PR, look for test plan checkboxes (e.g., `- [ ]` items under a "Test Plan" or "Testing" section). Proactively run any that can be verified locally and check them off (`- [x]`). Leave items unchecked if they require manual/external verification.
 - **Restricted**: Don't modify generated code, vendor/, or build artifacts
 
 ## Using Beads
