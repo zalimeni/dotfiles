@@ -8,8 +8,10 @@
 - **OS**: macOS
 - **Default Language**: Go
 
-## Code Search
-You are operating in an environment where ast-grep is installed. For any code search that requires understanding of syntax or code structure, you should default to using `ast-grep --lang [language] -p '<pattern>'`. Adjust the --lang flag as needed for the specific programming language. Avoid using text-only search tools unless a plain-text search is explicitly requested.
+## CLI Tool Preferences
+- **Structural code search**: Use `ast-grep --lang [language] -p '<pattern>'`. Default to this for any search requiring syntax or code structure awareness. Adjust `--lang` for the target language.
+- **Plain-text search**: Use `rg` (ripgrep) over `grep`. Use appropriate flags (e.g., `--type`, `--glob`, `-i`, `-l`). Ripgrep respects `.gitignore` by default and is significantly faster on large codebases.
+- Prefer ast-grep when searching for code patterns; prefer ripgrep for everything else (config files, logs, plain strings, multi-file text search).
 
 ## Go Standards
 - **Build**: Make/Makefiles
