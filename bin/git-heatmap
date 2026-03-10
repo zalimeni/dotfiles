@@ -45,7 +45,7 @@ Options:
   -n <top>                      Limit to top <n> files. [default: 30]
   --width <n>                   Limit histogram to <n> chars.
   -b <branch>, --base <branch>  Compare relative to <branch>. If on <branch>,
-                                show heatmap for entire repo. [default: master]
+                                show heatmap for entire repo. [default: origin HEAD]
   -c <char>, --char <char>      Use <char> to draw the bars. [default: █]
   -f <cmd>, --filter <cmd>      Filter output through <cmd> before creating the
                                 the histogram.
@@ -61,7 +61,7 @@ EOF
 done
 
 LIMIT=${LIMIT:-30}
-REVIEW_BASE=${REVIEW_BASE:-master}
+REVIEW_BASE=${REVIEW_BASE:-$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo main)}
 CHAR=${CHAR:-█}
 WIDTH=${WIDTH:-60}
 FILTER=${FILTER:-cat -}
@@ -103,12 +103,12 @@ else
 fi
 
 if [[ "$(git branch | grep '\*')" =~ $REVIEW_BASE ]]; then
-    # If on master, show heatmap for whole repo
+    # If on default branch, show heatmap for whole repo
     files | filter | histogram | color_name
 else
     MERGE_BASE="$(git merge-base HEAD "$REVIEW_BASE")"
     files |
-        # If on separate branch, show heatmap for files changed since master
+        # If on separate branch, show heatmap for files changed since base
         grep -xF -f <(git diff --name-only "$MERGE_BASE") |
         filter |
         histogram |
