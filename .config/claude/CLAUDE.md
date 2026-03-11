@@ -25,6 +25,7 @@
 - **PRs**: Always create draft PRs (`gh pr create --draft`) unless explicitly told otherwise
 - **Test Plans**: Before opening a PR, look for test plan checkboxes (e.g., `- [ ]` items under a "Test Plan" or "Testing" section). Proactively run any that can be verified locally and check them off (`- [x]`). Leave items unchecked if they require manual/external verification.
 - **Restricted**: Don't modify generated code, vendor/, or build artifacts
+- **Branch Switching**: NEVER use `git stash` to save staged work when switching branches. If you need to verify something on another branch, either make a temporary commit on the current branch, use `git worktree`, or clone to a temp directory. Stashing staged work risks losing carefully prepared changes.
 
 ## Using Beads
 When working on beads issues (via bd CLI), follow the rules below. Ignore them for non-beads contexts.
