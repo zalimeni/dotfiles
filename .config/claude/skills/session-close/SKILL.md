@@ -25,11 +25,11 @@ Use this skill when ending a work session. This ensures all work is properly sav
    git fetch origin
    git rebase origin/main
    bd sync
-   # Push with upstream tracking (handles both new and existing branches)
-   git push -u origin HEAD
+   # Push to remote — only add -u if no upstream is set
+   git push
    git status  # Verify push succeeded
    ```
-   If `git push` fails with "no upstream branch", the `-u` flag handles it.
+   If `git push` fails with "no upstream branch", retry with `git push -u origin HEAD`.
    If it fails with conflicts after rebase, resolve them and retry.
 5. **Clean up** - Clear stashes, prune remote branches
 6. **Verify** - All changes committed AND pushed
@@ -50,7 +50,7 @@ Before saying "done" or "complete", run this checklist:
 [ ] 1. git status                 (check what changed)
 [ ] 2. git add && git commit      (stage and commit changes)
 [ ] 3. bd sync                    (sync beads changes)
-[ ] 4. git push -u origin HEAD    (push to remote, set upstream)
+[ ] 4. git push                    (push to remote; add -u if no upstream)
 [ ] 5. git status                 (verify clean working tree)
 ```
 
