@@ -53,6 +53,22 @@ If the working tree is dirty:
 2. Ask whether to stash them (`git stash push -m "bdloop: stash before execution"`) or abort.
 3. Do NOT proceed with a dirty tree — bdexecissue makes commits, and uncommitted changes would be mixed in.
 
+#### Sync with Remote
+
+Fetch the latest remote state so that baselines and diffs are accurate. This prevents reviewing commits that are already merged upstream or missing recently-pushed work.
+
+```bash
+git fetch origin
+```
+
+If the current branch is behind its upstream, rebase to incorporate remote changes before starting work:
+
+```bash
+git pull --rebase
+```
+
+If the pull fails (e.g., conflicts), warn the user and abort — do not start the loop on a diverged branch.
+
 #### Capture VCS Baseline
 
 Record the current git commit SHA before any work begins:

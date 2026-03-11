@@ -35,6 +35,19 @@ Detect the input type and resolve it into `DIFF_CMD` and `LOG_CMD` variables use
 | Ref range (`A..B`) | contains `..` | `git diff A..B` | `git log A..B --oneline` |
 | Single ref (SHA, branch, or tag) | default | `git diff REF..HEAD` | `git log REF..HEAD --oneline` |
 
+**Sync base ref before diffing (non-PR targets only):**
+
+When the target resolves to a local branch name (not a bare SHA, not a PR), the local ref may be behind the remote. Stale local refs cause the review to include already-merged commits or miss recently-pushed work.
+
+```bash
+# Fetch the latest state of the base ref from origin
+git fetch origin <branch>:<branch>
+```
+
+- If the current branch IS the base branch (e.g., reviewing `main` while on `main`), skip the fetch-with-update (it would fail on a checked-out branch). Instead, run `git pull --ff-only` to advance the local branch.
+- If fetch fails (e.g., ref doesn't exist on remote, or is a tag/SHA), fall through — the ref may be local-only, which is fine.
+- For ref ranges (`A..B`), apply the same logic to both A and B if they look like branch names.
+
 **Validate the resolved target:**
 
 - **PR**: `gh pr view N --json number` must succeed. If the PR is not found, exit with an error.
