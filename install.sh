@@ -37,24 +37,7 @@ link_file() {
 # --- opencode config --------------------------------------------------------
 
 install_opencode() {
-  info "installing opencode"
-
-  # Install the binary if not already present
-  if ! command -v opencode &>/dev/null; then
-    if [ "$PLATFORM" = "Darwin" ]; then
-      if command -v brew &>/dev/null; then
-        info "  installing opencode via Homebrew"
-        brew install sst/tap/opencode
-      else
-        warn "Homebrew not found — install opencode manually: https://opencode.ai/download"
-      fi
-    else
-      info "  installing opencode via install script"
-      curl -fsSL https://opencode.ai/install | bash
-    fi
-  else
-    ok "opencode already installed ($(opencode --version 2>/dev/null || echo 'version unknown'))"
-  fi
+  info "installing opencode config"
 
   local opencode_dir="$HOME/.config/opencode"
   mkdir -p "$opencode_dir"
