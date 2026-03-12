@@ -1,26 +1,37 @@
 #!/usr/bin/env bash
 #
-# pre-commit-sync-agents: Keep opencode agents in sync with Claude agents.
+# pre-commit-sync-agents: Keep Claude and opencode agents in sync.
 #
-# Installed by install.sh as .git/hooks/pre-commit. When Claude agent files
-# are staged, translates them to opencode format and stages the results.
+# Installed by install.sh as .git/hooks/pre-commit.
+#
+# - Claude agents staged (only)  -> forward sync  (Claude -> opencode)
+# - opencode agents staged (only) -> reverse sync  (opencode -> Claude)
+# - Both staged                   -> forward sync wins; Claude is source of truth
 #
 set -euo pipefail
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-# Only act when Claude agent files are staged
-if ! git diff --cached --name-only | grep -q "^\.config/claude/agents/"; then
+staged=$(git diff --cached --name-only)
+claude_changed=$(echo "$staged"  | grep -c "^\.config/claude/agents/"   || true)
+opencode_changed=$(echo "$staged" | grep -c "^\.config/opencode/agents/" || true)
+
+if [ "$claude_changed" -eq 0 ] && [ "$opencode_changed" -eq 0 ]; then
   exit 0
 fi
 
-echo "  [ .. ] Claude agents changed — syncing to opencode format"
-
-if ! python3 "$DOTFILES_DIR/bin/sync-agents"; then
-  echo "  [FAIL] sync-agents failed" >&2
-  exit 1
+if [ "$claude_changed" -gt 0 ] && [ "$opencode_changed" -gt 0 ]; then
+  echo "  [WARN] Both Claude and opencode agents staged — Claude is source of truth, forward syncing"
 fi
 
-# Stage the updated opencode agent files
-git add "$DOTFILES_DIR/.config/opencode/agents/"
-echo "  [ OK ] opencode agents staged"
+if [ "$claude_changed" -gt 0 ]; then
+  echo "  [ .. ] Claude agents changed — forward syncing to opencode"
+  python3 "$DOTFILES_DIR/bin/sync-agents"
+  git add "$DOTFILES_DIR/.config/opencode/agents/"
+  echo "  [ OK ] opencode agents staged"
+else
+  echo "  [ .. ] opencode agents changed — reverse syncing to Claude"
+  python3 "$DOTFILES_DIR/bin/sync-agents" --from-opencode
+  git add "$DOTFILES_DIR/.config/claude/agents/"
+  echo "  [ OK ] Claude agents staged"
+fi
