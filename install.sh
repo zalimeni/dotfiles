@@ -50,16 +50,22 @@ install_opencode() {
   # Does NOT contain auth; opencode stores credentials in ~/.local/share/opencode/.
   link_file "$DOTFILES_DIR/.config/opencode/opencode.json" "$opencode_dir/opencode.json"
 
-  # package.json — declares opencode plugin dependencies (run `npm install` in opencode_dir).
+  # package.json — plugin dependencies for ~/.config/opencode/plugins/.
+  # OpenCode installs these with Bun at startup for local plugins like peon-ping.
   if [ -f "$DOTFILES_DIR/.config/opencode/package.json" ]; then
     link_file "$DOTFILES_DIR/.config/opencode/package.json" "$opencode_dir/package.json"
   fi
-
   # Agents — per-agent symlinks to the opencode-format translations.
   # These are generated from .config/claude/agents/ by bin/sync-agents.
   # Skills are NOT linked here: opencode natively reads ~/.claude/skills/, which
   # is already set up by install_claude().
   if [ -d "$DOTFILES_DIR/.config/opencode/agents" ]; then
+    if [ -L "$opencode_dir/agents" ]; then
+      rm "$opencode_dir/agents"
+    elif [ -f "$opencode_dir/agents" ]; then
+      mv "$opencode_dir/agents" "$opencode_dir/agents.backup"
+      warn "backed up existing $opencode_dir/agents to $opencode_dir/agents.backup"
+    fi
     mkdir -p "$opencode_dir/agents"
     for agent_file in "$DOTFILES_DIR/.config/opencode/agents"/*.md; do
       link_file "$agent_file" "$opencode_dir/agents/${agent_file##*/}"
