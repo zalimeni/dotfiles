@@ -34,6 +34,49 @@ link_file() {
   ok "linked $dst -> $src"
 }
 
+# --- opencode config --------------------------------------------------------
+
+install_opencode() {
+  info "installing opencode config"
+
+  local opencode_dir="$HOME/.config/opencode"
+  mkdir -p "$opencode_dir"
+
+  # AGENTS.md — opencode reads this as the global instruction file.
+  # Symlink to the same CLAUDE.md used by Claude Code; both tools share it.
+  link_file "$DOTFILES_DIR/.config/claude/CLAUDE.md" "$opencode_dir/AGENTS.md"
+
+  # opencode.json — main config (model, MCP servers).
+  # Does NOT contain auth; opencode stores credentials in ~/.local/share/opencode/.
+  link_file "$DOTFILES_DIR/.config/opencode/opencode.json" "$opencode_dir/opencode.json"
+
+  # Agents — per-agent symlinks to the opencode-format translations.
+  # These are generated from .config/claude/agents/ by bin/sync-agents.
+  # Skills are NOT linked here: opencode natively reads ~/.claude/skills/, which
+  # is already set up by install_claude().
+  if [ -d "$DOTFILES_DIR/.config/opencode/agents" ]; then
+    mkdir -p "$opencode_dir/agents"
+    for agent_file in "$DOTFILES_DIR/.config/opencode/agents"/*.md; do
+      link_file "$agent_file" "$opencode_dir/agents/${agent_file##*/}"
+    done
+  fi
+
+  # Pre-commit hook — keeps opencode agents in sync when Claude agents change.
+  local hooks_dir="$DOTFILES_DIR/.git/hooks"
+  if [ -d "$hooks_dir" ]; then
+    link_file "$DOTFILES_DIR/bin/pre-commit-sync-agents" "$hooks_dir/pre-commit"
+    ok "installed pre-commit hook (agent sync)"
+  else
+    warn "no .git/hooks directory found — skipping pre-commit hook install"
+  fi
+
+  echo ""
+  info "opencode post-install steps:"
+  info "  1. Run 'opencode /connect', select 'GitHub Copilot', complete auth"
+  info "  2. Run '/models' inside opencode to confirm model ID matches opencode.json"
+  info "  3. Set CONTEXT7_KEY env var (or Claude Environments UI) for context7 MCP"
+}
+
 # --- Claude Code config -----------------------------------------------------
 
 install_claude() {
@@ -219,6 +262,7 @@ main() {
   echo "  dotfiles installer — $([ "$PLATFORM" = "Darwin" ] && echo "macOS" || echo "Linux/sandbox")"
   echo ""
 
+  install_opencode
   install_claude
   install_git
   install_shell

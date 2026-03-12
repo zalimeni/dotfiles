@@ -1,0 +1,136 @@
+#!/usr/bin/env python3
+"""
+sync-agents: Translate Claude Code agent files to opencode format.
+
+Reads .config/claude/agents/*.md, translates frontmatter fields that differ
+between tools, and writes the results to .config/opencode/agents/.
+
+The body content (below the --- delimiter) is copied verbatim.
+
+Usage:
+  sync-agents          Sync all agents, overwriting as needed
+  sync-agents --check  Exit 1 if any agents are out of sync (for pre-commit)
+
+Frontmatter translation rules:
+  name, description   Copied as-is
+  model               Dropped; agents use opencode's configured default model
+  tools               Dropped; opencode has no fine-grained read-tool allowlist
+  disallowedTools     Mapped to opencode tools: {write|edit|bash: false}
+  skills              Dropped; opencode discovers skills via the skill tool
+  mode                Inferred: agents with Bash/Task access -> "all", else "subagent"
+"""
+
+import sys
+from pathlib import Path
+
+DOTFILES = Path(__file__).resolve().parent.parent
+CLAUDE_AGENTS = DOTFILES / ".config" / "claude" / "agents"
+OPENCODE_AGENTS = DOTFILES / ".config" / "opencode" / "agents"
+
+# Maps Claude disallowedTools names to opencode tool keys
+TOOL_MAP = {
+    "Write": "write",
+    "Edit": "edit",
+    "Bash": "bash",
+}
+
+
+def parse_frontmatter(content: str) -> tuple[dict, str]:
+    """Return (fields, body) from a markdown file with YAML frontmatter."""
+    if not content.startswith("---\n"):
+        return {}, content
+    end = content.find("\n---\n", 4)
+    if end == -1:
+        return {}, content
+    fm_str = content[4:end]
+    body = content[end + 5:]
+
+    fields: dict[str, str] = {}
+    for line in fm_str.splitlines():
+        if ": " in line:
+            k, v = line.split(": ", 1)
+            fields[k.strip()] = v.strip()
+        elif line.endswith(":") and not line.startswith(" "):
+            fields[line[:-1].strip()] = ""
+
+    return fields, body
+
+
+def translate(src_path: Path) -> str:
+    """Return opencode-format content for a Claude agent file."""
+    content = src_path.read_text()
+    fields, body = parse_frontmatter(content)
+
+    lines = ["---"]
+
+    # name and description are identical in both formats
+    if "name" in fields:
+        lines.append(f"name: {fields['name']}")
+    if "description" in fields:
+        lines.append(f"description: {fields['description']}")
+
+    # Infer opencode mode from what Claude tools the agent had access to.
+    # Agents that used Bash or Task (subagent spawning) are primary-capable.
+    claude_allowed = [t.strip() for t in fields.get("tools", "").split(",") if t.strip()]
+    if any(t in claude_allowed for t in ("Bash", "Task")):
+        lines.append("mode: all")
+    else:
+        lines.append("mode: subagent")
+
+    # Map disallowedTools -> opencode tools block
+    disallowed_raw = fields.get("disallowedTools", "")
+    disallowed = [t.strip() for t in disallowed_raw.split(",") if t.strip()]
+    for t in disallowed:
+        if t not in TOOL_MAP:
+            print(f"WARNING: {src_path.name}: unmapped disallowedTool '{t}' — skipped", file=sys.stderr)
+    opencode_disabled = sorted(TOOL_MAP[t] for t in disallowed if t in TOOL_MAP)
+    if opencode_disabled:
+        lines.append("tools:")
+        for tool in opencode_disabled:
+            lines.append(f"  {tool}: false")
+
+    lines.append("---")
+
+    return "\n".join(lines) + "\n" + body
+
+
+def main() -> None:
+    check = "--check" in sys.argv
+    out_of_sync: list[str] = []
+    errors: list[str] = []
+
+    OPENCODE_AGENTS.mkdir(parents=True, exist_ok=True)
+
+    for src in sorted(CLAUDE_AGENTS.glob("*.md")):
+        dst = OPENCODE_AGENTS / src.name
+        try:
+            new_content = translate(src)
+            if dst.exists() and dst.read_text() == new_content:
+                continue
+            out_of_sync.append(str(dst.relative_to(DOTFILES)))
+            if not check:
+                dst.write_text(new_content)
+                print(f"  synced: {dst.relative_to(DOTFILES)}")
+        except Exception as exc:
+            errors.append(f"{src.name}: {exc}")
+
+    if errors:
+        for e in errors:
+            print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    if check and out_of_sync:
+        for path in out_of_sync:
+            print(f"OUT OF SYNC: {path}", file=sys.stderr)
+        print(
+            "\nRun 'bin/sync-agents' to regenerate opencode agents from Claude agents.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    if not out_of_sync:
+        print("  opencode agents already in sync")
+
+
+if __name__ == "__main__":
+    main()
