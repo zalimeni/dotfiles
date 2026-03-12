@@ -1,0 +1,96 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "anthropic/claude-opus-4-5",
+  "small_model": "anthropic/claude-haiku-4-5",
+  "instructions": [
+    "~/.config/opencode/AGENTS.md"
+  ],
+  "plugin": [
+    "opencode-handoff@0.3.2"
+  ],
+  "mcp": {
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "{env:CONTEXT7_KEY}"
+      },
+      "enabled": true
+    },
+    "gremlin": {
+      "type": "local",
+      "command": [
+        "gremlin-mcp"
+      ],
+      "environment": {
+        "GREMLIN_URL": "ws://localhost:8182/gremlin"
+      },
+      "enabled": true
+    },
+    "jira": {
+      "type": "remote",
+      "url": "https://mcp.atlassian.com/v1/mcp",
+      "enabled": false
+    },
+    "aws-documentation-mcp-server": {
+      "type": "local",
+      "command": [
+        "uvx",
+        "awslabs.aws-documentation-mcp-server@latest"
+      ],
+      "environment": {
+        "FASTMCP_LOG_LEVEL": "ERROR",
+        "AWS_DOCUMENTATION_PARTITION": "aws",
+        "MCP_USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+      },
+      "enabled": true
+    },
+    "ast-grep": {
+      "type": "local",
+      "command": [
+        "uv",
+        "--directory",
+        "/Users/michael.zalimeni/workspace/ast-grep-mcp",
+        "run",
+        "main.py"
+      ],
+      "enabled": true
+    },
+    "gopls": {
+      "type": "local",
+      "command": [
+        "gopls",
+        "mcp"
+      ],
+      "enabled": true
+    },
+    "datadog": {
+      "type": "local",
+      "command": [
+        "/Users/michael.zalimeni/.local/bin/datadog_mcp_cli"
+      ],
+      "enabled": false
+    },
+    "github": {
+      "type": "local",
+      "command": [
+        "docker",
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "GITHUB_PERSONAL_ACCESS_TOKEN={env:GITHUB_PERSONAL_ACCESS_TOKEN}",
+        "ghcr.io/github/github-mcp-server"
+      ],
+      "enabled": false
+    }
+  },
+  "lsp": {
+    "gopls": {
+      "command": [
+        "gopls",
+        "-remote=auto"
+      ]
+    }
+  }
+}

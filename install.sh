@@ -42,8 +42,10 @@ install_claude() {
   local claude_dir="$HOME/.claude"
   mkdir -p "$claude_dir"
 
-  # CLAUDE.md — symlink directly (portable across platforms)
+  # Canonical instruction file exposed under both Claude-compatible and
+  # tooling-agnostic names.
   link_file "$DOTFILES_DIR/.config/claude/CLAUDE.md" "$claude_dir/CLAUDE.md"
+  link_file "$DOTFILES_DIR/.config/claude/CLAUDE.md" "$claude_dir/AGENTS.md"
 
   # config.json (MCP servers, LSP)
   link_file "$DOTFILES_DIR/.config/claude/config.json" "$claude_dir/config.json"
@@ -71,6 +73,30 @@ install_claude() {
   else
     install_claude_sandbox_settings "$claude_dir/settings.json"
   fi
+}
+
+# --- OpenCode config --------------------------------------------------------
+
+install_opencode() {
+  info "installing OpenCode config"
+
+  local opencode_dir="$HOME/.config/opencode"
+  local claude_agents_dir="$HOME/.config/claude/agents"
+  mkdir -p "$opencode_dir"
+  mkdir -p "$claude_agents_dir"
+
+  link_file "$DOTFILES_DIR/.config/opencode/opencode.json" "$opencode_dir/opencode.json"
+
+  if [ -f "$DOTFILES_DIR/.config/opencode/package.json" ]; then
+    link_file "$DOTFILES_DIR/.config/opencode/package.json" "$opencode_dir/package.json"
+  fi
+
+  # Reuse Claude agent prompts as the single source of truth since OpenCode
+  # supports Claude-compatible markdown agents under ~/.config/claude/agents.
+  link_file "$DOTFILES_DIR/.config/claude/agents" "$claude_agents_dir"
+
+  # Share one canonical instructions file across Claude and OpenCode.
+  link_file "$DOTFILES_DIR/.config/claude/CLAUDE.md" "$opencode_dir/AGENTS.md"
 }
 
 install_claude_sandbox_settings() {
@@ -220,6 +246,7 @@ main() {
   echo ""
 
   install_claude
+  install_opencode
   install_git
   install_shell
 

@@ -16,6 +16,7 @@ everforest_colors terminal color palette reference
 
 .config/
   claude/         Claude Code config (CLAUDE.md, settings.json, skills, agents)
+  opencode/       OpenCode config (opencode.json; reuses Claude agents and instructions)
   ghostty/        Ghostty terminal config
   k9s/            Kubernetes TUI config
   mise/           mise runtime/tool version manager
@@ -32,8 +33,8 @@ git clone git@github.com:zalimeni/dotfiles.git ~/dotfiles
 cd ~/dotfiles && ./install.sh
 ```
 
-The installer detects macOS vs Linux and sets up Claude Code config, git identity,
-shell config, and bat theme. It's idempotent — safe to re-run.
+The installer detects macOS vs Linux and sets up Claude Code config, OpenCode config,
+git identity, shell config, and bat theme. It's idempotent — safe to re-run.
 
 For Claude Code online sandboxes, see [Sandbox setup](#sandbox-setup).
 
