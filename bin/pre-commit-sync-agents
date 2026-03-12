@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+#
+# pre-commit-sync-agents: Keep opencode agents in sync with Claude agents.
+#
+# Installed by install.sh as .git/hooks/pre-commit. When Claude agent files
+# are staged, translates them to opencode format and stages the results.
+#
+set -euo pipefail
+
+DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+
+# Only act when Claude agent files are staged
+if ! git diff --cached --name-only | grep -q "^\.config/claude/agents/"; then
+  exit 0
+fi
+
+echo "  [ .. ] Claude agents changed — syncing to opencode format"
+
+if ! python3 "$DOTFILES_DIR/bin/sync-agents"; then
+  echo "  [FAIL] sync-agents failed" >&2
+  exit 1
+fi
+
+# Stage the updated opencode agent files
+git add "$DOTFILES_DIR/.config/opencode/agents/"
+echo "  [ OK ] opencode agents staged"
