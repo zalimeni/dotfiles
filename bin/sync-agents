@@ -83,7 +83,7 @@ def parse_frontmatter(content: str) -> tuple[dict, str]:
     return fields, body
 
 
-def forward_translate(src_path: Path) -> str:
+def forward_translate(src_path: Path, _dst: Path | None = None) -> str:
     """Return opencode-format content for a Claude agent file."""
     content = src_path.read_text()
     fields, body = parse_frontmatter(content)
@@ -162,12 +162,10 @@ def reverse_translate(oc_path: Path, cl_path: Path) -> str:
 
     new_fm: list[str] = []
     for line in fm_lines:
-        if line.startswith("name: "):
-            oc_val = oc_fields.get("name", "")
-            new_fm.append(f"name: {oc_val}" if oc_val and oc_val != cl_fields.get("name") else line)
-        elif line.startswith("description: "):
-            oc_val = oc_fields.get("description", "")
-            new_fm.append(f"description: {oc_val}" if oc_val and oc_val != cl_fields.get("description") else line)
+        if line.startswith(("name: ", "description: ")):
+            key = line.split(": ", 1)[0]
+            oc_val = oc_fields.get(key, "")
+            new_fm.append(f"{key}: {oc_val}" if oc_val and oc_val != cl_fields.get(key) else line)
         elif line.startswith("disallowedTools: ") and new_disabled_set is not None:
             existing_set = {t.strip() for t in cl_fields.get("disallowedTools", "").split(",") if t.strip()}
             if new_disabled_set != existing_set:
@@ -187,7 +185,7 @@ def _sync(pairs: list[tuple[Path, Path]], translate_fn, check: bool) -> tuple[li
     errors: list[str] = []
     for src, dst in pairs:
         try:
-            new_content = translate_fn(src, dst) if translate_fn is reverse_translate else translate_fn(src)
+            new_content = translate_fn(src, dst)
             if dst.exists() and dst.read_text() == new_content:
                 continue
             changed.append(str(dst.relative_to(DOTFILES)))
@@ -204,6 +202,8 @@ def main() -> None:
     from_opencode = "--from-opencode" in sys.argv
 
     if from_opencode:
+        if check:
+            print("WARNING: --check is not supported with --from-opencode; running sync anyway", file=sys.stderr)
         CLAUDE_AGENTS.mkdir(parents=True, exist_ok=True)
         pairs = [(src, CLAUDE_AGENTS / src.name) for src in sorted(OPENCODE_AGENTS.glob("*.md"))]
         changed, errors = _sync(pairs, reverse_translate, check=False)

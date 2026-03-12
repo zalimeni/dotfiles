@@ -13,8 +13,8 @@ set -euo pipefail
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 staged=$(git diff --cached --name-only)
-claude_changed=$(echo "$staged"  | grep -c "^\.config/claude/agents/"   || true)
-opencode_changed=$(echo "$staged" | grep -c "^\.config/opencode/agents/" || true)
+claude_changed=$(grep -c "^\.config/claude/agents/"   <<< "$staged" || true)
+opencode_changed=$(grep -c "^\.config/opencode/agents/" <<< "$staged" || true)
 
 if [ "$claude_changed" -eq 0 ] && [ "$opencode_changed" -eq 0 ]; then
   exit 0
@@ -26,12 +26,12 @@ fi
 
 if [ "$claude_changed" -gt 0 ]; then
   echo "  [ .. ] Claude agents changed — forward syncing to opencode"
-  python3 "$DOTFILES_DIR/bin/sync-agents"
+  python3 "$DOTFILES_DIR/bin/sync-agents" || { echo "  [FAIL] sync-agents failed" >&2; exit 1; }
   git add "$DOTFILES_DIR/.config/opencode/agents/"
   echo "  [ OK ] opencode agents staged"
 else
   echo "  [ .. ] opencode agents changed — reverse syncing to Claude"
-  python3 "$DOTFILES_DIR/bin/sync-agents" --from-opencode
+  python3 "$DOTFILES_DIR/bin/sync-agents" --from-opencode || { echo "  [FAIL] sync-agents --from-opencode failed" >&2; exit 1; }
   git add "$DOTFILES_DIR/.config/claude/agents/"
   echo "  [ OK ] Claude agents staged"
 fi
