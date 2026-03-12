@@ -50,6 +50,11 @@ install_opencode() {
   # Does NOT contain auth; opencode stores credentials in ~/.local/share/opencode/.
   link_file "$DOTFILES_DIR/.config/opencode/opencode.json" "$opencode_dir/opencode.json"
 
+  # package.json — declares opencode plugin dependencies (run `npm install` in opencode_dir).
+  if [ -f "$DOTFILES_DIR/.config/opencode/package.json" ]; then
+    link_file "$DOTFILES_DIR/.config/opencode/package.json" "$opencode_dir/package.json"
+  fi
+
   # Agents — per-agent symlinks to the opencode-format translations.
   # These are generated from .config/claude/agents/ by bin/sync-agents.
   # Skills are NOT linked here: opencode natively reads ~/.claude/skills/, which
@@ -72,9 +77,10 @@ install_opencode() {
 
   echo ""
   info "opencode post-install steps:"
-  info "  1. Run 'opencode /connect', select 'GitHub Copilot', complete auth"
-  info "  2. Run '/models' inside opencode to confirm model ID matches opencode.json"
-  info "  3. Set CONTEXT7_KEY env var (or Claude Environments UI) for context7 MCP"
+  info "  1. cd ~/.config/opencode && npm install  (installs plugins)"
+  info "  2. Run 'opencode /connect', select 'GitHub Copilot', complete auth"
+  info "  3. Run '/models' inside opencode to confirm model IDs match opencode.json"
+  info "  4. Set CONTEXT7_KEY env var (or Claude Environments UI) for context7 MCP"
 }
 
 # --- Claude Code config -----------------------------------------------------
@@ -85,8 +91,10 @@ install_claude() {
   local claude_dir="$HOME/.claude"
   mkdir -p "$claude_dir"
 
-  # CLAUDE.md — symlink directly (portable across platforms)
+  # Canonical instruction file — exposed under both Claude-compatible and
+  # tooling-agnostic names so Claude Code and opencode both find it.
   link_file "$DOTFILES_DIR/.config/claude/CLAUDE.md" "$claude_dir/CLAUDE.md"
+  link_file "$DOTFILES_DIR/.config/claude/CLAUDE.md" "$claude_dir/AGENTS.md"
 
   # config.json (MCP servers, LSP)
   link_file "$DOTFILES_DIR/.config/claude/config.json" "$claude_dir/config.json"
