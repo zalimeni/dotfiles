@@ -57,12 +57,8 @@ install_opencode() {
   if [ -d "$DOTFILES_DIR/.config/opencode/agents" ]; then
     mkdir -p "$opencode_dir/agents"
     for agent_file in "$DOTFILES_DIR/.config/opencode/agents"/*.md; do
-      [ -f "$agent_file" ] || continue
-      local agent_name
-      agent_name="$(basename "$agent_file")"
-      link_file "$agent_file" "$opencode_dir/agents/$agent_name"
+      link_file "$agent_file" "$opencode_dir/agents/${agent_file##*/}"
     done
-    ok "linked opencode agents"
   fi
 
   # Pre-commit hook — keeps opencode agents in sync when Claude agents change.

@@ -21,7 +21,6 @@ Frontmatter translation rules:
 """
 
 import sys
-import os
 from pathlib import Path
 
 DOTFILES = Path(__file__).resolve().parent.parent
@@ -81,6 +80,9 @@ def translate(src_path: Path) -> str:
     # Map disallowedTools -> opencode tools block
     disallowed_raw = fields.get("disallowedTools", "")
     disallowed = [t.strip() for t in disallowed_raw.split(",") if t.strip()]
+    for t in disallowed:
+        if t not in TOOL_MAP:
+            print(f"WARNING: {src_path.name}: unmapped disallowedTool '{t}' — skipped", file=sys.stderr)
     opencode_disabled = sorted(TOOL_MAP[t] for t in disallowed if t in TOOL_MAP)
     if opencode_disabled:
         lines.append("tools:")
