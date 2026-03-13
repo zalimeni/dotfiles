@@ -1,4 +1,5 @@
 ---
+name: bdagent-cleanup
 description: clean up a bdagent worktree and tmux session
 argument-hint: <branch-name>
 allowed-tools: Bash(git *), Bash(tmux *)

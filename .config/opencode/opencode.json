@@ -13,6 +13,12 @@
     "~/.config/opencode/AGENTS.md"
   ],
 
+  "skills": {
+    "paths": [
+      "~/.claude/skills"
+    ]
+  },
+
   "plugin": [
     "opencode-handoff@0.3.2"
   ],

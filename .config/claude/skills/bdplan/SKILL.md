@@ -1,4 +1,5 @@
 ---
+name: bdplan
 description: plan a set of bd issues
 allowed-tools: Bash(bd:*)
 ---

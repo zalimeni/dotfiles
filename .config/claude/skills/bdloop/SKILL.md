@@ -1,4 +1,5 @@
 ---
+name: bdloop
 description: execute-review-fix loop until review passes
 argument-hint: [scope]
 allowed-tools: Skill, Task, Bash(bd:*), Bash(git *)

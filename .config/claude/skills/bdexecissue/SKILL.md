@@ -1,4 +1,5 @@
 ---
+name: bdexecissue
 description: execute a single bd issue
 argument-hint: <issue key>
 allowed-tools: Bash(bd *), Bash(git *), Bash(ast-grep *), Bash(sg *), Read, Edit, Write, Glob, Grep

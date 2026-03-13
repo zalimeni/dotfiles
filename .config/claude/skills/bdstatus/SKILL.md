@@ -1,4 +1,5 @@
 ---
+name: bdstatus
 description: quick overview of bd project status
 allowed-tools: Bash(bd *)
 ---

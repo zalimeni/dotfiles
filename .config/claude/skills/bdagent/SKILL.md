@@ -1,4 +1,5 @@
 ---
+name: bdagent
 description: spawn agent worktree to execute bdloop
 argument-hint: <branch-name> <epic-id>
 allowed-tools: Bash(tmux-claude-worktree *), Bash(git *), Bash(bd *)

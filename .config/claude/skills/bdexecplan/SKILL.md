@@ -1,4 +1,5 @@
 ---
+name: bdexecplan
 description: execute a set of bd issues sequentially
 allowed-tools: Bash(bd:*), Skill
 ---
