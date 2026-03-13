@@ -101,18 +101,21 @@ Guide users through complex operations with step-by-step interactions:
 When user says "create an issue/story/bug/task":
 1. Ask for project key if not specified (e.g., "Which project? (e.g., PROJ, DEV)")
 2. Ask for summary/title
-3. Ask for description (make it optional, suggest they can add it later)
+3. Collect enough context to produce a Markdown description; do not create the ticket without one
 4. Ask for additional details:
-   - Assignee (suggest @me or leave unassigned)
-   - Priority (suggest based on issue type: bugs=High, stories=Medium)
-   - Labels (suggest relevant labels)
-   - Components (if mentioned)
-5. Use acli jira workitem create with collected information
-6. Confirm creation and show the issue key
+    - Assignee (suggest @me or leave unassigned)
+    - Priority (suggest based on issue type: bugs=High, stories=Medium)
+    - Labels (suggest relevant labels)
+    - Components (if mentioned)
+    - Team value and team field/custom field details if not already known; if unclear, ask a targeted question
+    - Epic/parent if the issue should belong to one; if unclear, ask a targeted question rather than guessing
+    - Code references that should be linked in the description
+5. Use acli jira workitem create with a Markdown description and explicit team/custom field assignment when required
+6. Verify the created issue has the expected team value; if not, fix it with `acli jira workitem edit` before finishing
 7. Suggest next actions: "Would you like to add subtasks or link related issues?"
 
 Example:
-acli jira workitem create --project IG --type Task --summary "Fix bug" --description "Details" --assignee "@me" --label "bug,critical"
+acli jira workitem create --project IG --type Task --summary "Fix bug" --description "$(cat \"$TMPDIR/jira-desc.md\")" --assignee "@me" --label "bug,critical" --custom "customfield_10001=InfraGraph-Graph Engine"
 ```
 
 #### Epic Creation Workflow
@@ -122,10 +125,11 @@ When creating an Epic:
 1. Follow standard issue creation steps
 2. After creation, ask: "Would you like to create sub-issues for this epic?"
 3. If yes:
-   - Ask how many and what type (stories, tasks, bugs)
-   - Collect summary for each
-   - Create issues using acli jira workitem create --parent EPIC-KEY
-   - All sub-issues automatically link to the parent epic
+    - Ask how many and what type (stories, tasks, bugs)
+    - Collect summary for each
+    - Create issues using acli jira workitem create --parent EPIC-KEY with Markdown descriptions
+    - All sub-issues automatically link to the parent epic
+    - Verify the team field still populated on the created issues; if inheritance fails, set the custom field explicitly
 4. Suggest: "Would you like to add this epic to a sprint or board?"
 
 Example:
@@ -175,11 +179,14 @@ When user wants to create multiple issues:
 1. Identify the source (list, file, description)
 2. If from file, use read tool to get contents
 3. Parse and extract issue information
-4. Confirm the list with user: "I found N items. Should I create them all?"
-5. Create issues one by one using acli jira workitem create in a loop
-6. Report progress: "Creating 10 issues..."
-7. Summarize results: "Created 10 issues: PROJ-1 through PROJ-10"
-8. Offer to link them if they're related (e.g., all subtasks of an epic)
+4. Convert each item into a Markdown description, not a plain one-line summary
+5. Capture or confirm the team field value/custom field mapping once per batch if needed
+6. Confirm the list with user: "I found N items. Should I create them all?"
+7. Create issues one by one using acli jira workitem create in a loop
+8. Verify team assignment for each created issue or sample-check when the mapping is deterministic
+9. Report progress: "Creating 10 issues..."
+10. Summarize results: "Created 10 issues: PROJ-1 through PROJ-10"
+11. Offer to link them if they're related (e.g., all subtasks of an epic)
 
 Note: acli doesn't have native batch creation, but you can loop through items efficiently
 ```
@@ -195,7 +202,7 @@ After getting issue details, analyze and suggest:
 - If status = "To Do" and assignee is empty: "Would you like to assign this?"
 - If status = "In Progress" and no time logged: "Remember to log work time"
 - If issue is old (>30 days) with no updates: "This issue hasn't been updated in a while"
-- If issue has no description: "Consider adding a description for clarity"
+- If issue has no description: "Add a Markdown description before closing this out"
 - If story has no acceptance criteria: "Would you like to add acceptance criteria?"
 ```
 
@@ -299,7 +306,8 @@ When user says "create issues from TODO.md":
 When user says "update PROJ-123 with content from design.md":
 1. Use read tool to get design document
 2. Extract relevant sections
-3. Show preview: "I'll add this content to the description. Proceed?"
+3. Convert the extracted content into Markdown that works as a Jira description
+4. Show preview: "I'll add this Markdown content to the description. Proceed?"
 4. Use acli jira workitem edit --key PROJ-123 --description "..."
 ```
 
@@ -309,13 +317,13 @@ When user says "update PROJ-123 with content from design.md":
 When user mentions code files or functions:
 1. Use read/grep to understand the code context
 2. Suggest creating issues based on code TODOs or FIXMEs
-3. Link issues to specific files/functions in description
+3. Link issues to specific files/functions in the description with Markdown links to the repository UI
 4. Use task tool to delegate to explore agent for deeper codebase analysis
 
 Example: "Find all TODO comments and create issues"
 → Delegate to explore agent to find TODOs
 → Create issues for each TODO
-→ Include file path and line number in description
+→ Include Markdown links to exact files and line anchors in the description
 ```
 
 #### Git Integration
@@ -397,10 +405,11 @@ Guide users toward Jira best practices:
 
 ```
 Encourage:
-- "Adding a description helps team members understand the issue"
+- "Add a Markdown description so the issue is readable in Jira and easy to update later"
 - "Consider adding acceptance criteria for this story"
 - "Would you like to add labels for better organization?"
 - "Linking related issues helps track dependencies"
+- "When you reference code, link the exact file and line in Markdown instead of pasting plain paths"
 ```
 
 #### Sprint Hygiene
@@ -438,12 +447,20 @@ Guide through:
 
 **IMPORTANT**: Use the acli skill for ALL Jira operations. The acli skill provides comprehensive CLI-based access to Jira via the Atlassian CLI tool.
 
+For issue creation and updates:
+
+- Always send Jira descriptions as Markdown.
+- Ensure the team field is set successfully; it may require `--custom "customfield_12345=value"` rather than a dedicated team flag.
+- If the team value or custom field ID is unclear, ask one targeted question before creating the issue.
+- If the correct epic or parent is unclear, ask one targeted question before creating the issue.
+- When referencing code, use Markdown links to exact files and line anchors, not plain text paths.
+
 Use bash commands with `acli jira` for core Jira operations:
 
 **Issue Management:**
 
 - `acli jira workitem view KEY-123` - Get full issue details
-- `acli jira workitem create --project PROJ --type Task --summary "..." --description "..."` - Create issue
+- `acli jira workitem create --project PROJ --type Task --summary "..." --description "$(cat \"$TMPDIR/jira-desc.md\")"` - Create issue with a Markdown description
 - `acli jira workitem edit --key KEY-123 --summary "..."` - Update issue fields
 - `acli jira workitem delete --key KEY-123` - Delete issue (confirm with user first!)
 - `acli jira workitem transition --key KEY-123 --status "In Progress"` - Change issue status
@@ -634,7 +651,7 @@ What's the bug summary/title?
 User: "Dashboard widget alignment is broken on mobile"
 
 Response:
-Would you like to add a description? (You can add it later if you prefer)
+Give me the context for the Markdown description. I'll format it for Jira.
 
 User: "yes, the widgets overlap on screens smaller than 768px"
 
@@ -650,7 +667,7 @@ Response:
 ✓ Created bug: PROJ-459
 
 Summary: Dashboard widget alignment is broken on mobile
-Description: The widgets overlap on screens smaller than 768px
+Description: Markdown description added
 Type: Bug
 Priority: High
 Assignee: john@example.com

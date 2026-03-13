@@ -7,6 +7,17 @@ description: Work with Atlassian products (Jira and Confluence) using the Atlass
 
 Use the Atlassian CLI to interact with Jira and Confluence from the command line.
 
+## Jira Ticket Requirements
+
+When creating or updating Jira work items:
+
+- Always write the description in Markdown.
+- For multi-line Markdown, write the body to a temp file or heredoc and pass the file contents to `--description` rather than embedding heading lines directly in a quoted shell argument.
+- Ensure team assignment succeeds before considering the task complete. The team field may be a Jira custom field; if the correct team value or field ID is unclear, ask the user.
+- If the work item should be linked to an epic and the correct epic is unclear, ask the user before creating or updating it.
+- If code is referenced in the description, use Markdown links to exact files and line anchors in the repository UI, not plain text paths.
+- After create or edit operations that should set team, verify the stored team field value and repair it immediately if it did not stick.
+
 ## Project-Specific Configuration
 
 ### InfraGraph Project (IG)
@@ -18,33 +29,47 @@ Use the Atlassian CLI to interact with Jira and Confluence from the command line
 
 **Creating Issues:**
 
-When creating Jira issues for the InfraGraph project, always include the team field:
+When creating Jira issues for the InfraGraph project, always include the team field and a Markdown description:
 
 ```bash
-# Create a task with team field
+# Create a task with markdown description and team field
+cat > "$TMPDIR/jira-desc.md" <<'EOF'
+## Context
+- Investigate the failing traversal path.
+
+## Code References
+- [`graph/query/planner.go#L42`](https://github.com/example/repo/blob/main/graph/query/planner.go#L42)
+EOF
+
 acli jira workitem create \
   --project IG \
   --type Task \
   --summary "Task summary" \
-  --description "Task description" \
+  --description "$(cat "$TMPDIR/jira-desc.md")" \
   --custom "customfield_10001=InfraGraph-Graph Engine"
+```
+
+Verify the team field after creation:
+
+```bash
+acli jira workitem view IG-123 --json | jq '{key: .key, team: .fields.customfield_10001}'
 ```
 
 **Linking to Epics:**
 
-When creating issues under an epic, use the `--parent` flag. This automatically inherits the team field from the parent epic:
+When creating issues under an epic, use the `--parent` flag. This often inherits the team field from the parent epic, but you should still verify that the team field is populated:
 
 ```bash
-# Create a subtask under an epic (team field inherited)
+# Create a subtask under an epic (verify inherited team field)
 acli jira workitem create \
   --project IG \
   --type Task \
   --summary "Subtask summary" \
-  --description "Task description" \
+  --description "$(cat "$TMPDIR/jira-desc.md")" \
   --parent IG-1234
 ```
 
-**Note**: When linking to an epic via `--parent`, you don't need to explicitly set `customfield_10001` as it will be inherited from the parent.
+**Note**: When linking to an epic via `--parent`, `customfield_10001` is usually inherited from the parent, but do not assume it worked without verification.
 
 ## Authentication
 
@@ -150,8 +175,20 @@ acli jira workitem view KEY-123 --web
 # Create a task
 acli jira workitem create --project PROJ --type Task --summary "Fix login bug"
 
-# Create with description and assignee
-acli jira workitem create --project PROJ --type Task --summary "Implement feature" --description "Detailed description here" --assignee "user@example.com"
+# Create with markdown description and assignee
+cat > "$TMPDIR/workitem-desc.md" <<'EOF'
+## Summary
+Implement the new authentication callback.
+
+## Acceptance Criteria
+- Callback exchanges the code for a token.
+- Failures are logged with request context.
+
+## Code References
+- [`internal/auth/callback.go#L18`](https://github.com/example/repo/blob/main/internal/auth/callback.go#L18)
+EOF
+
+acli jira workitem create --project PROJ --type Task --summary "Implement feature" --description "$(cat "$TMPDIR/workitem-desc.md")" --assignee "user@example.com"
 
 # Self-assign with @me
 acli jira workitem create --project PROJ --type Bug --summary "Fix crash" --assignee "@me" --label "bug,critical"
@@ -171,6 +208,9 @@ acli jira workitem edit --key "KEY-123" --summary "Updated summary"
 
 # Edit multiple work items
 acli jira workitem edit --key "KEY-1,KEY-2" --assignee "user@example.com"
+
+# Repair or set a team custom field explicitly
+acli jira workitem edit --key "KEY-123" --custom "customfield_10001=InfraGraph-Graph Engine"
 
 # Edit work items matching a JQL query
 acli jira workitem edit --jql "project = PROJ" --assignee "user@example.com" --yes
