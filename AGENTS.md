@@ -26,7 +26,3 @@ When creating or updating a PR as the agent:
 - If you create a git commit, include commit-body attribution plus a co-author trailer using the exact model, for example:
   - `Generated with OpenCode (gpt-5.4).`
   - `Co-authored-by: OpenCode (gpt-5.4) <noreply@openai.com>`
-
-## Go Tests
-
-- Prefer map-based table tests over slices with a `name` field when constructing Go table tests.

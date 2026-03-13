@@ -16,6 +16,7 @@
 ## Go Standards
 - **Build**: Make/Makefiles
 - **Testing**: Testify (testify/assert, testify/mock, testify/suite)
+- **Table Tests**: Prefer map-based table tests over slices with a `name` field
 - **Linting**: golangci-lint, staticcheck
 - **Docs**: Godoc comments on all exported APIs; internal code only where non-obvious
 

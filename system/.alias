@@ -45,6 +45,9 @@ alias gaap="gapa"
 alias kc=kubectl
 alias k=kubectl
 
+# Terraform
+alias tf=terraform
+
 # Go
 alias yaegi='rlwrap yaegi'
 
