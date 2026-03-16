@@ -24,7 +24,8 @@ Use this skill when ending a work session. This ensures all work is properly sav
    ```bash
    git fetch origin
    git rebase origin/main
-   bd sync
+   # If bd doctor shows uncommitted Dolt changes:
+   bd vc commit -m "commit changes"
    # Push to remote — only add -u if no upstream is set
    git push
    git status  # Verify push succeeded
@@ -49,7 +50,7 @@ Before saying "done" or "complete", run this checklist:
 ```
 [ ] 1. git status                 (check what changed)
 [ ] 2. git add && git commit      (stage and commit changes)
-[ ] 3. bd sync                    (sync beads changes)
+[ ] 3. bd vc commit               (if bd doctor reports Dolt changes)
 [ ] 4. git push                    (push to remote; add -u if no upstream)
 [ ] 5. git status                 (verify clean working tree)
 ```

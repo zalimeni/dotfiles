@@ -51,7 +51,8 @@ When working on beads issues (via bd CLI), follow the rules below. Ignore them f
 4. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    git pull --rebase
-   bd sync
+   # If bd doctor shows uncommitted Dolt changes:
+   bd vc commit -m "commit changes"
    git push
    git status  # MUST show "up to date with origin"
    ```

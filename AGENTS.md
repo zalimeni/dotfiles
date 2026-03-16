@@ -9,13 +9,16 @@ bd ready              # Find available work
 bd show <id>          # View issue details
 bd update <id> --status in_progress  # Claim work
 bd close <id>         # Complete work
-bd sync               # Sync with git
+bd vc commit -m "..." # Commit pending beads Dolt changes when needed
 ```
 
 ## Session Completion
 
 Work is NOT complete until `git push` succeeds. Follow the session-close protocol:
-`bd sync && git pull --rebase && git push`
+`git pull --rebase && git push`
+
+If `bd doctor` reports uncommitted Dolt changes, commit them first with
+`bd vc commit -m "..."`.
 
 ## Pull Requests
 
