@@ -23,6 +23,7 @@
 ## Practices
 - **Changes**: Context-dependent scope (minimal for bugs/urgent, broader for features)
 - **Commits**: Conventional Commits format
+- **Rebase / Squash**: When rebasing and squashing a branch, preserve the branch's primary commit message as the final squashed commit message. Check that message for accuracy against the branch's final combined changes and adjust it if needed, but do not replace it with a later secondary message such as a fix, refactor, or follow-up commit.
 - **PRs**: Always create draft PRs (`gh pr create --draft`) unless explicitly told otherwise
 - **Test Plans**: Before opening a PR, look for test plan checkboxes (e.g., `- [ ]` items under a "Test Plan" or "Testing" section). Proactively run any that can be verified locally and check them off (`- [x]`). Leave items unchecked if they require manual/external verification.
 - **Restricted**: Don't modify generated code, vendor/, or build artifacts
