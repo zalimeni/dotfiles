@@ -13,3 +13,7 @@ system/.work_function
 
 # Go
 /sp2md
+
+# Dolt database files (added by bd init)
+.dolt/
+*.db
