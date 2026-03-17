@@ -2,6 +2,7 @@
 name: review-general
 description: General code quality reviewer for correctness, security basics, and maintainability
 mode: subagent
+model: openai/gpt-5.4
 tools:
   bash: false
   edit: false

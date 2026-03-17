@@ -2,6 +2,7 @@
 name: review-data
 description: Database interaction reviewer for SQL, Gremlin, connection management, and query patterns
 mode: subagent
+model: openai/gpt-5.4
 tools:
   bash: false
   edit: false
