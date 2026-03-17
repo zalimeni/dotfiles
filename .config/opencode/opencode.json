@@ -88,5 +88,14 @@
     "gopls": {
       "command": ["gopls", "-remote=auto"]
     }
+  },
+
+  "experimental": {
+    // Canonical Claude agent files use profile names; the generator resolves
+    // them to concrete OpenCode model IDs from this map.
+    "agentProfiles": {
+      "balanced": "small_model",
+      "heavy": "model"
+    }
   }
 }

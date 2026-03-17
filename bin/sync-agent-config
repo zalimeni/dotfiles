@@ -17,6 +17,8 @@ Usage:
 """
 
 import sys
+import json
+from functools import partial
 from pathlib import Path
 
 DOTFILES = Path(__file__).resolve().parent.parent
@@ -24,6 +26,7 @@ CLAUDE_DOC = DOTFILES / ".config" / "claude" / "CLAUDE.md"
 CLAUDE_AGENTS = DOTFILES / ".config" / "claude" / "agents"
 OPENCODE_DOC = DOTFILES / ".config" / "opencode" / "AGENTS.md"
 OPENCODE_AGENTS = DOTFILES / ".config" / "opencode" / "agents"
+OPENCODE_CONFIG = DOTFILES / ".config" / "opencode" / "opencode.json"
 
 # Maps Claude disallowedTools names to opencode tool keys (and reverse)
 TOOL_MAP = {
@@ -32,6 +35,96 @@ TOOL_MAP = {
     "Bash": "bash",
 }
 REVERSE_TOOL_MAP = {v: k for k, v in TOOL_MAP.items()}
+
+
+def strip_json_comments(content: str) -> str:
+    """Remove // and /* */ comments from JSONC content."""
+    out: list[str] = []
+    in_string = False
+    escape = False
+    in_line_comment = False
+    in_block_comment = False
+    i = 0
+
+    while i < len(content):
+        ch = content[i]
+        nxt = content[i + 1] if i + 1 < len(content) else ""
+
+        if in_line_comment:
+            if ch == "\n":
+                in_line_comment = False
+                out.append(ch)
+            i += 1
+            continue
+
+        if in_block_comment:
+            if ch == "*" and nxt == "/":
+                in_block_comment = False
+                i += 2
+                continue
+            if ch == "\n":
+                out.append(ch)
+            i += 1
+            continue
+
+        if in_string:
+            out.append(ch)
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_string = False
+            i += 1
+            continue
+
+        if ch == '"':
+            in_string = True
+            out.append(ch)
+            i += 1
+            continue
+
+        if ch == "/" and nxt == "/":
+            in_line_comment = True
+            i += 2
+            continue
+
+        if ch == "/" and nxt == "*":
+            in_block_comment = True
+            i += 2
+            continue
+
+        out.append(ch)
+        i += 1
+
+    return "".join(out)
+
+
+def load_jsonc(path: Path) -> dict:
+    """Load a JSON or JSONC file into a dictionary."""
+    data = json.loads(strip_json_comments(path.read_text()))
+    if not isinstance(data, dict):
+        raise ValueError(f"expected {path} to contain a JSON object")
+    return data
+
+
+def load_opencode_profile_models() -> dict[str, str]:
+    """Resolve canonical agent profiles to concrete opencode model IDs."""
+    config = load_jsonc(OPENCODE_CONFIG)
+    profile_sources = config.get("experimental", {}).get("agentProfiles", {})
+    if not isinstance(profile_sources, dict):
+        raise ValueError(".config/opencode/opencode.json experimental.agentProfiles must be an object")
+
+    models: dict[str, str] = {}
+    for profile, source in profile_sources.items():
+        if not isinstance(profile, str) or not isinstance(source, str):
+            raise ValueError("experimental.agentProfiles entries must map strings to strings")
+        resolved = config.get(source, source)
+        if not isinstance(resolved, str) or not resolved:
+            raise ValueError(f"could not resolve opencode model for profile '{profile}' from '{source}'")
+        models[profile] = resolved
+
+    return models
 
 
 def parse_frontmatter(content: str) -> tuple[dict, str]:
@@ -72,8 +165,26 @@ def parse_frontmatter(content: str) -> tuple[dict, str]:
     return fields, body
 
 
-def forward_translate(src_path: Path, _dst: Path | None = None) -> str:
-    """Return opencode-format content for a Claude agent file."""
+def forward_translate(src_path: Path, _dst: Path | None = None, profile_models: dict[str, str] | None = None) -> str:
+    """Return opencode-format content for a canonical Claude agent file.
+
+    Supported canonical input frontmatter:
+      - name
+      - description
+      - tools
+      - disallowedTools
+      - profile
+
+    Generated opencode frontmatter:
+      - name
+      - description
+      - mode
+      - model (resolved from profile via opencode config)
+      - tools
+    """
+    if profile_models is None:
+        raise ValueError("profile_models is required for forward translation")
+
     content = src_path.read_text()
     fields, body = parse_frontmatter(content)
 
@@ -86,6 +197,13 @@ def forward_translate(src_path: Path, _dst: Path | None = None) -> str:
 
     claude_allowed = [t.strip() for t in str(fields.get("tools", "")).split(",") if t.strip()]
     lines.append("mode: all" if any(t in claude_allowed for t in ("Bash", "Task")) else "mode: subagent")
+
+    profile = str(fields.get("profile", "")).strip()
+    if profile:
+        model = profile_models.get(profile)
+        if not model:
+            raise ValueError(f"unknown profile '{profile}' in {src_path.name}")
+        lines.append(f"model: {model}")
 
     disallowed = [t.strip() for t in str(fields.get("disallowedTools", "")).split(",") if t.strip()]
     for tool in disallowed:
@@ -101,13 +219,18 @@ def forward_translate(src_path: Path, _dst: Path | None = None) -> str:
     return "\n".join(lines) + "\n" + body
 
 
-def reverse_translate(oc_path: Path, cl_path: Path) -> str:
+def reverse_translate(oc_path: Path, cl_path: Path, profile_models: dict[str, str] | None = None) -> str:
     """Return Claude-format content by merging opencode edits into the Claude file."""
+    if profile_models is None:
+        raise ValueError("profile_models is required for reverse translation")
+
     oc_fields, oc_body = parse_frontmatter(oc_path.read_text())
+    model_to_profile = {model: profile for profile, model in profile_models.items()}
 
     oc_tools = oc_fields.get("tools", {})
     new_disabled_set: set[str] | None = None
     new_disabled_str: str | None = None
+    new_profile = model_to_profile.get(str(oc_fields.get("model", "")).strip()) or None
     if isinstance(oc_tools, dict):
         disabled = sorted(
             REVERSE_TOOL_MAP[key] for key, value in oc_tools.items()
@@ -121,6 +244,8 @@ def reverse_translate(oc_path: Path, cl_path: Path) -> str:
         for key in ("name", "description"):
             if key in oc_fields:
                 lines.append(f"{key}: {oc_fields[key]}")
+        if new_profile:
+            lines.append(f"profile: {new_profile}")
         if new_disabled_str:
             lines.append(f"disallowedTools: {new_disabled_str}")
         lines.append("---")
@@ -132,11 +257,18 @@ def reverse_translate(oc_path: Path, cl_path: Path) -> str:
     fm_lines = cl_content[4:fm_end].splitlines()
 
     new_fm: list[str] = []
+    profile_seen = False
     for line in fm_lines:
         if line.startswith(("name: ", "description: ")):
             key = line.split(": ", 1)[0]
             oc_val = oc_fields.get(key, "")
             new_fm.append(f"{key}: {oc_val}" if oc_val and oc_val != cl_fields.get(key) else line)
+        elif line.startswith("profile: "):
+            profile_seen = True
+            if new_profile and new_profile != cl_fields.get("profile"):
+                new_fm.append(f"profile: {new_profile}")
+            else:
+                new_fm.append(line)
         elif line.startswith("disallowedTools: ") and new_disabled_set is not None:
             existing_set = {tool.strip() for tool in cl_fields.get("disallowedTools", "").split(",") if tool.strip()}
             if new_disabled_set != existing_set:
@@ -146,6 +278,13 @@ def reverse_translate(oc_path: Path, cl_path: Path) -> str:
                 new_fm.append(line)
         else:
             new_fm.append(line)
+
+    if new_profile and not profile_seen:
+        insert_at = 0
+        for idx, line in enumerate(new_fm):
+            if line.startswith(("name: ", "description: ", "tools: ", "disallowedTools: ")):
+                insert_at = idx + 1
+        new_fm.insert(insert_at, f"profile: {new_profile}")
 
     return "---\n" + "\n".join(new_fm) + "\n---\n" + oc_body
 
@@ -186,6 +325,7 @@ def sync_agents(pairs: list[tuple[Path, Path]], translate_fn, check: bool) -> tu
 def main() -> None:
     check = "--check" in sys.argv
     from_opencode = "--from-opencode" in sys.argv
+    opencode_profile_models = load_opencode_profile_models()
 
     changed: list[str] = []
     errors: list[str] = []
@@ -195,7 +335,11 @@ def main() -> None:
             print("WARNING: --check is not supported with --from-opencode; running sync anyway", file=sys.stderr)
         CLAUDE_AGENTS.mkdir(parents=True, exist_ok=True)
         pairs = [(src, CLAUDE_AGENTS / src.name) for src in sorted(OPENCODE_AGENTS.glob("*.md"))]
-        agent_changed, agent_errors = sync_agents(pairs, reverse_translate, check=False)
+        agent_changed, agent_errors = sync_agents(
+            pairs,
+            partial(reverse_translate, profile_models=opencode_profile_models),
+            check=False,
+        )
         changed.extend(agent_changed)
         errors.extend(agent_errors)
     else:
@@ -204,7 +348,11 @@ def main() -> None:
         changed.extend(doc_changed)
         errors.extend(doc_errors)
         pairs = [(src, OPENCODE_AGENTS / src.name) for src in sorted(CLAUDE_AGENTS.glob("*.md"))]
-        agent_changed, agent_errors = sync_agents(pairs, forward_translate, check)
+        agent_changed, agent_errors = sync_agents(
+            pairs,
+            partial(forward_translate, profile_models=opencode_profile_models),
+            check,
+        )
         changed.extend(agent_changed)
         errors.extend(agent_errors)
 

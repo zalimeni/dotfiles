@@ -2,6 +2,7 @@
 name: review-distributed
 description: Distributed systems reviewer for consistency, fault tolerance, and coordination patterns
 mode: subagent
+model: openai/gpt-5.4
 tools:
   bash: false
   edit: false
