@@ -2,5 +2,127 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-exec "$SCRIPT_DIR/tmux-claude-worktree" "$@"
+split_mode=false
+while [[ ${1-} == --* ]]; do
+  case "$1" in
+    --split)
+      split_mode=true
+      shift
+      ;;
+    *)
+      echo "Error: Unknown option $1" >&2
+      exit 1
+      ;;
+  esac
+done
+
+branch_name=${1-}
+epic_id=${2-}
+script_name=$(basename "$0")
+agent_harness=${AGENT_HARNESS:-opencode}
+
+usage() {
+  echo "Usage: $script_name [--split] <branch-name> <epic-id>" >&2
+}
+
+if [[ -z "$branch_name" ]]; then
+  echo "Error: Branch name required" >&2
+  usage
+  exit 1
+fi
+
+if [[ -z "$epic_id" ]]; then
+  echo "Error: Epic ID required" >&2
+  usage
+  exit 1
+fi
+
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+repo_name=$(basename "$repo_root")
+parent_dir=$(dirname "$repo_root")
+worktree_dir="$parent_dir/$branch_name"
+
+if [[ -d "$worktree_dir" ]]; then
+  echo "Error: Worktree directory already exists: $worktree_dir" >&2
+  exit 1
+fi
+
+case "$agent_harness" in
+  opencode)
+    harness_label="opencode"
+    auto_confirm=false
+    agent_cmd=(opencode --prompt "/bdloop $epic_id" .)
+    ;;
+  claude)
+    harness_label="claude"
+    auto_confirm=true
+    agent_cmd=(env -u CLAUDECODE claude --dangerously-skip-permissions "/bdloop $epic_id")
+    ;;
+  *)
+    echo "Error: Unsupported AGENT_HARNESS '$agent_harness'" >&2
+    echo "Supported harnesses: opencode, claude" >&2
+    exit 1
+    ;;
+esac
+
+printf -v agent_cmd_string '%q ' "${agent_cmd[@]}"
+agent_cmd_string=${agent_cmd_string% }
+
+echo "Creating git worktree at: $worktree_dir"
+git -C "$repo_root" worktree add -b "$branch_name" "$worktree_dir"
+
+mkdir -p "$worktree_dir/.beads"
+printf '../%s/.beads\n' "$repo_name" > "$worktree_dir/.beads/redirect"
+
+session_name=$(printf '%s' "$branch_name" | tr '/.' '__')
+
+start_agent() {
+  local target=$1
+
+  echo "Starting $harness_label agent with /bdloop $epic_id"
+  tmux send-keys -t "$target" "$agent_cmd_string" C-m
+
+  if [[ "$auto_confirm" == true ]]; then
+    sleep 5
+    tmux send-keys -t "$target" Down
+    sleep 1
+    tmux send-keys -t "$target" Enter
+  fi
+}
+
+if [[ "$split_mode" == true ]]; then
+  if [[ -z ${TMUX-} ]]; then
+    echo "Error: --split requires running inside a tmux session" >&2
+    exit 1
+  fi
+
+  echo "Splitting pane for agent"
+  pane_id=$(tmux split-window -h -c "$worktree_dir" -P -F '#{pane_id}')
+  start_agent "$pane_id"
+
+  echo ""
+  echo "✓ Worktree created: $worktree_dir"
+  echo "✓ Branch created: $branch_name"
+  echo "✓ Harness: $agent_harness"
+  echo "✓ Agent running in split pane: $pane_id"
+else
+  if tmux has-session -t="$session_name" 2>/dev/null; then
+    echo "Error: tmux session '$session_name' already exists" >&2
+    exit 1
+  fi
+
+  echo "Creating tmux session: $session_name"
+  tmux new-session -ds "$session_name" -c "$worktree_dir"
+  start_agent "$session_name"
+
+  echo ""
+  echo "✓ Worktree created: $worktree_dir"
+  echo "✓ Branch created: $branch_name"
+  echo "✓ Harness: $agent_harness"
+  echo "✓ tmux session started: $session_name"
+  echo ""
+  echo "To switch to the session: tmux switch-client -t $session_name"
+  echo "To attach to the session: tmux attach -t $session_name"
+fi
+
+echo "To clean up when done: git worktree remove $worktree_dir && git branch -d $branch_name"
