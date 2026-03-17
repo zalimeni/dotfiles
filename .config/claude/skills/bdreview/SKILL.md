@@ -34,7 +34,8 @@ Detect the input type and resolve it into `DIFF_CMD` and `LOG_CMD` variables use
 | ----- | --------- | -------- | ------- |
 | PR ref (`#N`, bare number, or `github.com/.../pull/N` URL) | matches `#?\d+$` or GH PR URL | `gh pr diff N` | `gh pr view N` |
 | Ref range (`A..B`) | contains `..` | `git diff A..B` | `git log A..B --oneline` |
-| Single ref (SHA, branch, or tag) | default | `git diff REF..HEAD` | `git log REF..HEAD --oneline` |
+| Single branch/tag ref | resolves to branch or tag name | `git diff REF...HEAD` | `git log $(git merge-base REF HEAD)..HEAD --oneline` |
+| Single SHA | resolves to a commit SHA | `git diff SHA..HEAD` | `git log SHA..HEAD --oneline` |
 
 **Sync base ref before diffing (non-PR targets only):**
 
@@ -46,8 +47,16 @@ git fetch origin <branch>:<branch>
 ```
 
 - If the current branch IS the base branch (e.g., reviewing `main` while on `main`), skip the fetch-with-update (it would fail on a checked-out branch). Instead, run `git pull --ff-only` to advance the local branch.
-- If fetch fails (e.g., ref doesn't exist on remote, or is a tag/SHA), fall through — the ref may be local-only, which is fine.
+- If fetch fails (e.g., ref doesn't exist on remote, is a checked-out branch, or is a tag/SHA), fall through — the ref may be local-only, which is fine.
 - For ref ranges (`A..B`), apply the same logic to both A and B if they look like branch names.
+
+**Use actual branch commits, not just tree differences, when reviewing against a base branch:**
+
+- For a single branch/tag base such as `main`, always compute `MERGE_BASE=$(git merge-base REF HEAD)` after syncing the ref.
+- Review the branch's actual work with `git diff REF...HEAD` and `git log $MERGE_BASE..HEAD --oneline`.
+- Build a changed-file list from `git diff --name-only REF...HEAD` and tell the review agent to focus on those files.
+- Do **not** report findings from files that are different only because the base branch moved forward after the feature branch diverged.
+- If a shared file changed on the branch (for example shared gateway wiring used by a new API), it is still in scope even if the branch's primary feature is narrower.
 
 **Validate the resolved target:**
 
@@ -63,6 +72,8 @@ Run `LOG_CMD` to verify there are changes to review.
 
 - **PR**: `gh pr view N --json additions,deletions` — if both are 0, no changes.
 - **Ref range / single ref**: if the log output is empty, no changes.
+
+For single branch/tag refs, also use `git diff --name-only REF...HEAD` to confirm there are files changed on the branch. If the file list is empty, there is nothing to review.
 
 If no changes, output a message and exit — nothing to review.
 
@@ -90,6 +101,11 @@ Use this command to see the diff:
 
 Use this command to see the commit log:
   [LOG_CMD]
+
+Use this command to see the changed files that are actually in scope:
+  [FILES_CMD]
+
+Review ONLY files returned by [FILES_CMD]. Ignore files that differ only because the base branch advanced after the branch diverged.
 
 Review all changed files thoroughly for correctness, security, best practices, error handling, and architecture."
 )
@@ -127,6 +143,8 @@ Parse the review agent's response. Count findings by category:
 - **Critical** — must-fix issues (bugs, security, data integrity)
 - **Recommendations** — should-fix improvements (performance, architecture, best practices)
 - **Suggestions** — nice-to-have (informational only, do NOT trigger fixes)
+
+Before categorizing, discard any finding that is out of scope for the resolved target, including findings from files not present in `[FILES_CMD]` for branch/tag reviews.
 
 ### 5. Output Review Result Card
 
@@ -177,6 +195,7 @@ Report whether new ready issues were created.
 - **No changes**: Exit early with SKIP verdict (Step 2).
 - **No target provided**: Default to `main` as the base ref.
 - **Invalid target**: Exit with error (Step 1) — ref doesn't exist, PR not found, etc.
+- **Base branch moved ahead**: For branch/tag reviews, use three-dot diff and merge-base-scoped commit log so the review stays limited to actual branch commits.
 - **Closed/merged PR**: Still reviewable — `gh pr diff` works on closed PRs.
 - **PR URL formats**: Support both `https://github.com/org/repo/pull/123` and shorthand `#123` / `123`.
 - **bdplan creates no issues**: Report that no actionable issues were created from findings.
