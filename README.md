@@ -16,7 +16,7 @@ everforest_colors terminal color palette reference
 
 .config/
   claude/         Claude Code config (CLAUDE.md, settings.json, skills, agents)
-  opencode/       OpenCode config (opencode.json; reuses Claude agents and instructions)
+  opencode/       OpenCode config (opencode.json, generated AGENTS.md, translated agents)
   ghostty/        Ghostty terminal config
   k9s/            Kubernetes TUI config
   mise/           mise runtime/tool version manager
@@ -36,6 +36,9 @@ cd ~/dotfiles && ./install.sh
 The installer detects macOS vs Linux and sets up Claude Code config, OpenCode config,
 git identity, shell config, and bat theme. It's idempotent — safe to re-run.
 
+For local work sessions, `system/.work_env` exports `AGENT_HARNESS=opencode` so
+shared launcher flows default to the OpenCode harness.
+
 For Claude Code online sandboxes, see [Sandbox setup](#sandbox-setup).
 
 ### Sandbox setup
@@ -44,6 +47,9 @@ In the Claude Environments UI, set:
 
 - **Setup command**: `git clone https://github.com/zalimeni/dotfiles.git ~/dotfiles && ~/dotfiles/install.sh`
 - **Environment variables**: `CONTEXT7_KEY`, plus any secrets from `system/.private_env`
+
+Use `tmux-agent-worktree` for new delegated agent worktrees; harness selection comes
+from `AGENT_HARNESS` instead of a Claude-specific launcher name.
 
 ## Tools
 

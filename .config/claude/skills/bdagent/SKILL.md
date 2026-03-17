@@ -2,7 +2,7 @@
 name: bdagent
 description: spawn agent worktree to execute bdloop
 argument-hint: <branch-name> <epic-id>
-allowed-tools: Bash(tmux-claude-worktree *), Bash(git *), Bash(bd *)
+allowed-tools: Bash(tmux-agent-worktree *), Bash(git *), Bash(bd *)
 ---
 # BD Agent Worktree
 
@@ -65,9 +65,9 @@ If no ready work exists, warn the user that the agent will have nothing to execu
 
 ### 4. Create Worktree and Spawn Agent
 
-Run the `tmux-claude-worktree` script:
+Run the `tmux-agent-worktree` script:
 ```bash
-tmux-claude-worktree "$branch_name" "$epic_id"
+tmux-agent-worktree "$branch_name" "$epic_id"
 ```
 
 The script will:
