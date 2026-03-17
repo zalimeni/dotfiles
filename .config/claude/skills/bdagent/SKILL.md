@@ -7,7 +7,7 @@ allowed-tools: Bash(tmux-claude-worktree *), Bash(git *), Bash(bd *)
 # BD Agent Worktree
 
 ## Overview
-Creates a new git worktree in a sibling directory, spawns a tmux session there, and starts a Claude agent running `/bdloop` on the specified epic. Used after planning is complete to delegate execution to a separate agent in an isolated workspace.
+Creates a new git worktree in a sibling directory, spawns a tmux session there, and starts an agent running `/bdloop` on the specified epic. Used after planning is complete to delegate execution to a separate agent in an isolated workspace.
 
 ## Arguments
 $ARGUMENTS
@@ -25,7 +25,7 @@ $ARGUMENTS
 
 This skill is used **after** planning has been completed:
 
-1. User and Claude complete planning session
+1. User and agent complete planning session
 2. Epic and tasks are created in beads with `/bdplan`
 3. User invokes this skill to spawn a separate agent for execution
 4. New agent runs `/bdloop` to execute-review-fix until passing
@@ -73,7 +73,7 @@ tmux-claude-worktree "$branch_name" "$epic_id"
 The script will:
 - Create a git worktree at `../$branch_name` on a new branch
 - Create a new tmux session named after the branch
-- Start Claude in that session with `/bdloop $epic_id`
+- Start the agent in that session with `/bdloop $epic_id`
 - Leave the current session active (doesn't switch)
 
 ### 5. Report Success

@@ -63,7 +63,7 @@ When working on beads issues (via bd CLI), follow the rules below. Ignore them f
 
 ### Shell Command Safety
 
-Claude Code rejects shell commands containing a quoted newline followed by a `#`-prefixed line (security check against hidden arguments). This commonly triggers with `bd` commands that include markdown headings or comments in inline arguments.
+Some agent harnesses reject shell commands containing a quoted newline followed by a `#`-prefixed line as a hidden-argument safety check. This commonly triggers with `bd` commands that include markdown headings or comments in inline arguments.
 
 **Rules for constructing `bd` commands:**
 - **Never** put multi-line strings with `#`-prefixed lines directly in shell arguments
@@ -72,7 +72,7 @@ Claude Code rejects shell commands containing a quoted newline followed by a `#`
 - Alternative: prefix `#` lines with a space or use a different heading syntax in inline args
 
 ```bash
-# BAD — will be rejected by Claude Code permission check
+# BAD — can be rejected by harness safety checks
 bd create "Task name" --description "## Context
 # This heading triggers the warning"
 

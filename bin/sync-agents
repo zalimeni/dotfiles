@@ -3,7 +3,7 @@
 sync-agents: Translate agent files between Claude Code and opencode formats.
 
 Reads .config/claude/agents/*.md, translates frontmatter fields that differ
-between tools, and writes the results to .config/opencode/agents/ (and back).
+between harnesses, and writes the results to .config/opencode/agents/ (and back).
 
 The body content (below the --- delimiter) is copied verbatim in both directions.
 
@@ -14,7 +14,7 @@ Usage:
 
 Forward translation rules (Claude -> opencode):
   name, description   Copied as-is
-  model               Dropped; agents use opencode's configured default model
+  profile             Dropped; concrete model selection is harness-specific
   tools               Dropped; opencode has no fine-grained read-tool allowlist
   disallowedTools     Mapped to opencode tools: {write|edit|bash: false}
   skills              Dropped; opencode discovers skills via the skill tool
@@ -23,7 +23,7 @@ Forward translation rules (Claude -> opencode):
 Reverse translation rules (opencode -> Claude):
   name, description   Copied as-is
   tools (dict block)  Mapped back to Claude disallowedTools
-  model, tools (str)  Preserved from the existing Claude file (never overwritten)
+  profile, tools (str) Preserved from the existing Claude file (never overwritten)
   skills              Preserved from the existing Claude file (never overwritten)
   body                Taken from the opencode file (reflects any edits made there)
 """
@@ -120,7 +120,7 @@ def reverse_translate(oc_path: Path, cl_path: Path) -> str:
 
     The opencode file provides the updated body and tool restrictions.
     The existing Claude file's frontmatter is preserved verbatim — field order,
-    formatting, and Claude-only fields (model, tools allowlist, skills) are all
+    formatting, and Claude-only fields (profile, tools allowlist, skills) are all
     kept exactly as they are. Only fields that actually changed in opencode are
     updated in place.
 

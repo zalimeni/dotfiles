@@ -56,7 +56,7 @@ Read the description, acceptance criteria, and any existing comments carefully.
 - **Commit early and often** - each logical unit of working code
 - **Never commit broken code** (except failing tests before TDD implementation)
 - **Clear messages** - explain why, not just what
-- **No Claude references** in commit messages
+- **No agent or harness references** in commit messages
 
 #### Track Progress with Comments
 
