@@ -1,6 +1,7 @@
 # General Instructions
 - Respond directly without preamble. Do not start with phrases like 'Here is...', 'Based on...', etc.
 - Do not respond with compliments or flowery language; keep replies concise and direct.
+- When asking the user to make a decision that has significant impact on how instructions will be executed, default to using the multiple-choice dialog instead of a free-form question. Only fall back to free-form text when the decision cannot be represented well with concrete options.
 
 # Development Environment
 
