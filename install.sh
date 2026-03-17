@@ -34,6 +34,15 @@ link_file() {
   ok "linked $dst -> $src"
 }
 
+generate_agent_config() {
+  local generator="$DOTFILES_DIR/bin/sync-agent-config"
+
+  [ -x "$generator" ] || fail "missing generator: $generator"
+
+  info "regenerating translated agent config"
+  "$generator"
+}
+
 # --- opencode config --------------------------------------------------------
 
 install_opencode() {
@@ -42,9 +51,8 @@ install_opencode() {
   local opencode_dir="$HOME/.config/opencode"
   mkdir -p "$opencode_dir"
 
-  # AGENTS.md — opencode reads this as the global instruction file.
-  # Symlink to the same CLAUDE.md used by Claude Code; both tools share it.
-  link_file "$DOTFILES_DIR/.config/claude/CLAUDE.md" "$opencode_dir/AGENTS.md"
+  # AGENTS.md — generated from the canonical Claude instructions.
+  link_file "$DOTFILES_DIR/.config/opencode/AGENTS.md" "$opencode_dir/AGENTS.md"
 
   # opencode.json — main config (model, MCP servers).
   # Does NOT contain auth; opencode stores credentials in ~/.local/share/opencode/.
@@ -55,8 +63,8 @@ install_opencode() {
   if [ -f "$DOTFILES_DIR/.config/opencode/package.json" ]; then
     link_file "$DOTFILES_DIR/.config/opencode/package.json" "$opencode_dir/package.json"
   fi
-  # Agents — per-agent symlinks to the opencode-format translations.
-  # These are generated from .config/claude/agents/ by bin/sync-agents.
+  # Agents — per-agent symlinks to the generated opencode translations.
+  # These are generated from .config/claude/agents/ by bin/sync-agent-config.
   # Skills are NOT linked here: opencode natively reads ~/.claude/skills/, which
   # is already set up by install_claude().
   if [ -d "$DOTFILES_DIR/.config/opencode/agents" ]; then
@@ -276,6 +284,7 @@ main() {
   echo "  dotfiles installer — $([ "$PLATFORM" = "Darwin" ] && echo "macOS" || echo "Linux/sandbox")"
   echo ""
 
+  generate_agent_config
   install_opencode
   install_claude
   install_git

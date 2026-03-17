@@ -7,8 +7,8 @@
   "model": "openai/gpt-5.4",
   "small_model": "openai/gpt-5.3-codex",
 
-  // Global instructions file — reuses the same CLAUDE.md that Claude Code reads.
-  // Symlinked by install_opencode() as ~/.config/opencode/AGENTS.md.
+  // Global instructions file — generated from the canonical Claude instructions
+  // and symlinked by install_opencode() as ~/.config/opencode/AGENTS.md.
   "instructions": [
     "~/.config/opencode/AGENTS.md"
   ],

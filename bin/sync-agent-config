@@ -1,0 +1,230 @@
+#!/usr/bin/env python3
+"""
+sync-agent-config: Generate harness-specific agent config from canonical Claude files.
+
+Reads .config/claude/CLAUDE.md and .config/claude/agents/*.md, then writes the
+generated OpenCode outputs to .config/opencode/AGENTS.md and
+.config/opencode/agents/*.md.
+
+The agent body content (below the --- delimiter) is copied verbatim in both
+directions. The global instructions file is generated only in the forward
+direction because the Claude path remains canonical.
+
+Usage:
+  sync-agent-config                 Forward sync: Claude -> opencode (default)
+  sync-agent-config --from-opencode Reverse sync: opencode -> Claude agents
+  sync-agent-config --check         Exit 1 if forward sync is out of date
+"""
+
+import sys
+from pathlib import Path
+
+DOTFILES = Path(__file__).resolve().parent.parent
+CLAUDE_DOC = DOTFILES / ".config" / "claude" / "CLAUDE.md"
+CLAUDE_AGENTS = DOTFILES / ".config" / "claude" / "agents"
+OPENCODE_DOC = DOTFILES / ".config" / "opencode" / "AGENTS.md"
+OPENCODE_AGENTS = DOTFILES / ".config" / "opencode" / "agents"
+
+# Maps Claude disallowedTools names to opencode tool keys (and reverse)
+TOOL_MAP = {
+    "Write": "write",
+    "Edit": "edit",
+    "Bash": "bash",
+}
+REVERSE_TOOL_MAP = {v: k for k, v in TOOL_MAP.items()}
+
+
+def parse_frontmatter(content: str) -> tuple[dict, str]:
+    """Return (fields, body) from a markdown file with YAML frontmatter.
+
+    Handles both flat key: value pairs and one level of indented sub-keys,
+    which is used by the opencode tools block:
+
+        tools:
+          write: false
+          edit: false
+    """
+    if not content.startswith("---\n"):
+        return {}, content
+    end = content.find("\n---\n", 4)
+    if end == -1:
+        return {}, content
+    fm_str = content[4:end]
+    body = content[end + 5:]
+
+    fields: dict = {}
+    current_key: str | None = None
+    for line in fm_str.splitlines():
+        if line.startswith("  ") and current_key is not None:
+            if ": " in line:
+                sub_k, sub_v = line.strip().split(": ", 1)
+                if not isinstance(fields.get(current_key), dict):
+                    fields[current_key] = {}
+                fields[current_key][sub_k] = sub_v
+        elif ": " in line and not line.startswith(" "):
+            k, v = line.split(": ", 1)
+            current_key = k.strip()
+            fields[current_key] = v.strip()
+        elif line.endswith(":") and not line.startswith(" "):
+            current_key = line[:-1].strip()
+            fields[current_key] = {}
+
+    return fields, body
+
+
+def forward_translate(src_path: Path, _dst: Path | None = None) -> str:
+    """Return opencode-format content for a Claude agent file."""
+    content = src_path.read_text()
+    fields, body = parse_frontmatter(content)
+
+    lines = ["---"]
+
+    if "name" in fields:
+        lines.append(f"name: {fields['name']}")
+    if "description" in fields:
+        lines.append(f"description: {fields['description']}")
+
+    claude_allowed = [t.strip() for t in str(fields.get("tools", "")).split(",") if t.strip()]
+    lines.append("mode: all" if any(t in claude_allowed for t in ("Bash", "Task")) else "mode: subagent")
+
+    disallowed = [t.strip() for t in str(fields.get("disallowedTools", "")).split(",") if t.strip()]
+    for tool in disallowed:
+        if tool not in TOOL_MAP:
+            print(f"WARNING: {src_path.name}: unmapped disallowedTool '{tool}' - skipped", file=sys.stderr)
+    opencode_disabled = sorted(TOOL_MAP[tool] for tool in disallowed if tool in TOOL_MAP)
+    if opencode_disabled:
+        lines.append("tools:")
+        for tool in opencode_disabled:
+            lines.append(f"  {tool}: false")
+
+    lines.append("---")
+    return "\n".join(lines) + "\n" + body
+
+
+def reverse_translate(oc_path: Path, cl_path: Path) -> str:
+    """Return Claude-format content by merging opencode edits into the Claude file."""
+    oc_fields, oc_body = parse_frontmatter(oc_path.read_text())
+
+    oc_tools = oc_fields.get("tools", {})
+    new_disabled_set: set[str] | None = None
+    new_disabled_str: str | None = None
+    if isinstance(oc_tools, dict):
+        disabled = sorted(
+            REVERSE_TOOL_MAP[key] for key, value in oc_tools.items()
+            if value == "false" and key in REVERSE_TOOL_MAP
+        )
+        new_disabled_set = set(disabled)
+        new_disabled_str = ", ".join(disabled)
+
+    if not cl_path.exists():
+        lines = ["---"]
+        for key in ("name", "description"):
+            if key in oc_fields:
+                lines.append(f"{key}: {oc_fields[key]}")
+        if new_disabled_str:
+            lines.append(f"disallowedTools: {new_disabled_str}")
+        lines.append("---")
+        return "\n".join(lines) + "\n" + oc_body
+
+    cl_content = cl_path.read_text()
+    cl_fields, _ = parse_frontmatter(cl_content)
+    fm_end = cl_content.find("\n---\n", 4)
+    fm_lines = cl_content[4:fm_end].splitlines()
+
+    new_fm: list[str] = []
+    for line in fm_lines:
+        if line.startswith(("name: ", "description: ")):
+            key = line.split(": ", 1)[0]
+            oc_val = oc_fields.get(key, "")
+            new_fm.append(f"{key}: {oc_val}" if oc_val and oc_val != cl_fields.get(key) else line)
+        elif line.startswith("disallowedTools: ") and new_disabled_set is not None:
+            existing_set = {tool.strip() for tool in cl_fields.get("disallowedTools", "").split(",") if tool.strip()}
+            if new_disabled_set != existing_set:
+                if new_disabled_str:
+                    new_fm.append(f"disallowedTools: {new_disabled_str}")
+            else:
+                new_fm.append(line)
+        else:
+            new_fm.append(line)
+
+    return "---\n" + "\n".join(new_fm) + "\n---\n" + oc_body
+
+
+def sync_markdown(src: Path, dst: Path, check: bool) -> tuple[list[str], list[str]]:
+    changed: list[str] = []
+    errors: list[str] = []
+    try:
+        new_content = src.read_text()
+        if not dst.exists() or dst.read_text() != new_content:
+            changed.append(str(dst.relative_to(DOTFILES)))
+            if not check:
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                dst.write_text(new_content)
+                print(f"  synced: {dst.relative_to(DOTFILES)}")
+    except Exception as exc:
+        errors.append(f"{src.name}: {exc}")
+    return changed, errors
+
+
+def sync_agents(pairs: list[tuple[Path, Path]], translate_fn, check: bool) -> tuple[list[str], list[str]]:
+    changed: list[str] = []
+    errors: list[str] = []
+    for src, dst in pairs:
+        try:
+            new_content = translate_fn(src, dst)
+            if dst.exists() and dst.read_text() == new_content:
+                continue
+            changed.append(str(dst.relative_to(DOTFILES)))
+            if not check:
+                dst.write_text(new_content)
+                print(f"  synced: {dst.relative_to(DOTFILES)}")
+        except Exception as exc:
+            errors.append(f"{src.name}: {exc}")
+    return changed, errors
+
+
+def main() -> None:
+    check = "--check" in sys.argv
+    from_opencode = "--from-opencode" in sys.argv
+
+    changed: list[str] = []
+    errors: list[str] = []
+
+    if from_opencode:
+        if check:
+            print("WARNING: --check is not supported with --from-opencode; running sync anyway", file=sys.stderr)
+        CLAUDE_AGENTS.mkdir(parents=True, exist_ok=True)
+        pairs = [(src, CLAUDE_AGENTS / src.name) for src in sorted(OPENCODE_AGENTS.glob("*.md"))]
+        agent_changed, agent_errors = sync_agents(pairs, reverse_translate, check=False)
+        changed.extend(agent_changed)
+        errors.extend(agent_errors)
+    else:
+        OPENCODE_AGENTS.mkdir(parents=True, exist_ok=True)
+        doc_changed, doc_errors = sync_markdown(CLAUDE_DOC, OPENCODE_DOC, check)
+        changed.extend(doc_changed)
+        errors.extend(doc_errors)
+        pairs = [(src, OPENCODE_AGENTS / src.name) for src in sorted(CLAUDE_AGENTS.glob("*.md"))]
+        agent_changed, agent_errors = sync_agents(pairs, forward_translate, check)
+        changed.extend(agent_changed)
+        errors.extend(agent_errors)
+
+    if errors:
+        for error in errors:
+            print(f"ERROR: {error}", file=sys.stderr)
+        sys.exit(1)
+
+    if check and changed:
+        for path in changed:
+            print(f"OUT OF SYNC: {path}", file=sys.stderr)
+        print(
+            "\nRun 'bin/sync-agent-config' to regenerate opencode config from Claude files.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    if not changed:
+        print("  agent config already in sync")
+
+
+if __name__ == "__main__":
+    main()
