@@ -1,7 +1,7 @@
 ---
 name: bdreview
 description: review code changes since a baseline commit and plan fixes
-argument-hint: [target] [label]
+argument-hint: "[target] [label]"
 allowed-tools: Skill, Task, Bash(bd:*), Bash(git *), Bash(gh *)
 ---
 
