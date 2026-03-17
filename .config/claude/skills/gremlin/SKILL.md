@@ -2,6 +2,7 @@
 name: gremlin
 description: Write Gremlin graph traversal queries for Neptune using the gremlin-go driver patterns in this codebase
 license: MIT
+compatibility: opencode
 metadata:
   audience: developers
   domain: graph-database

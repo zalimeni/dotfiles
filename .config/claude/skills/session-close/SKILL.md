@@ -2,6 +2,7 @@
 name: session-close
 description: Protocol for properly ending a coding session - ensures all work is committed, pushed, and handed off correctly.
 license: MIT
+compatibility: opencode
 metadata:
   category: workflow
   tools: git, bd
