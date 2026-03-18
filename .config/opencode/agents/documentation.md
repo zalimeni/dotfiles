@@ -2,7 +2,7 @@
 name: documentation
 description: Writes and maintains project documentation
 mode: subagent
-model: openai/gpt-5.3-codex
+model: github-copilot/gpt-5.3-codex
 tools:
   bash: false
 ---
