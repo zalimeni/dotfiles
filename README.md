@@ -26,6 +26,8 @@ everforest_colors terminal color palette reference
 
 ## Setup
 
+> **WARNING:** Before installing, verify you're ok with the files that will be overwritten, or save a backup!
+
 Clone the repo and run the installer:
 
 ```sh
@@ -34,12 +36,15 @@ cd ~/dotfiles && ./install.sh
 ```
 
 The installer detects macOS vs Linux and sets up Claude Code config, OpenCode config,
-git identity, shell config, and bat theme. It's idempotent — safe to re-run.
+git identity, shell config, etc. It's idempotent — safe to re-run.
 
-For local work sessions, `system/.work_env` exports `AGENT_HARNESS=opencode` so
-shared launcher flows default to the OpenCode harness.
+For local work sessions, `system/.work_env` can be used. It's git-ignored but acts the same as `system/.env`. Similar analogies exist for `system/.alias` and `system/.function`
 
 For Claude Code online sandboxes, see [Sandbox setup](#sandbox-setup).
+
+### Claude vs. OpenCode
+
+The installer manages subtle config, frontmatter, and other differences between these files by preferring a symlink to the Claude version in this repo, but actively translating when a clone isn't sufficient or compatible. For example, the OpenCode configured agents differ from Claude Code, and assume sourcing from GitHub Copilot (what I use at work).
 
 ### Sandbox setup
 
@@ -53,7 +58,7 @@ from `AGENT_HARNESS` instead of a Claude-specific launcher name.
 
 ## Tools
 
-- **Shell**: zsh + oh-my-zsh + starship
+- **Shell**: zsh + oh-my-zsh
 - **Terminal**: Ghostty + tmux
 - **Editor**: neovim
 - **Go**: go, golangci-lint, staticcheck
