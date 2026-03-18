@@ -53,7 +53,7 @@ When working on beads issues (via bd CLI), follow the rules below. Ignore them f
    ```bash
    git pull --rebase
    # If bd doctor shows uncommitted Dolt changes:
-   bd vc commit -m "commit changes"
+   bd dolt commit -m "commit changes"
    git push
    git status  # MUST show "up to date with origin"
    ```
@@ -68,7 +68,8 @@ Some agent harnesses reject shell commands containing a quoted newline followed 
 **Rules for constructing `bd` commands:**
 - **Never** put multi-line strings with `#`-prefixed lines directly in shell arguments
 - For short content without `#` lines: inline arguments are fine
-- For content with markdown headings or `#` lines: write to a temp file first, then pass via `--file` or stdin
+- For issue descriptions with markdown headings or `#` lines: write to a temp file first, then pass via `--body-file` or `--stdin`
+- For comments with markdown headings or `#` lines: write to a temp file first, then pass via `bd comments add -f`
 - Alternative: prefix `#` lines with a space or use a different heading syntax in inline args
 
 ```bash
@@ -81,10 +82,10 @@ cat > "$TMPDIR/bd-desc.md" << 'EOF'
 ## Context
 # This is fine in a file
 EOF
-bd create "Task name" --description "$(cat "$TMPDIR/bd-desc.md")"
+bd create "Task name" --body-file "$TMPDIR/bd-desc.md"
 
 # GOOD — short content without # lines is fine inline
-bd comment proj-5 "Completed implementation, tests passing"
+bd comments add proj-5 "Completed implementation, tests passing"
 ```
 
 **CRITICAL RULES:**

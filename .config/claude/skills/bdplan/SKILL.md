@@ -27,7 +27,7 @@ Use bd's dependency system to create project structure:
 
 - **Epic Issues**: High-level features (e.g., "Implement user authentication")
 - **Task Issues**: Specific implementation steps
-- **Dependencies**: Use `bd dep add` to chain tasks in execution order
+- **Dependencies**: Prefer `--parent` plus `--deps` during creation, or use `bd dep add` afterward
 
 #### Dependency Types to Use
 
@@ -37,7 +37,7 @@ Use bd's dependency system to create project structure:
 
 ### Creating the Plan
 
-**🔑 Best Practice: Use `--parent` and `--blocks` flags during creation**
+**🔑 Best Practice: Use `--parent` and `--deps` during creation**
 
 Instead of creating all issues first and then adding dependencies separately, set dependencies during issue creation for maximum efficiency:
 
@@ -45,13 +45,13 @@ Instead of creating all issues first and then adding dependencies separately, se
 # ✅ EFFICIENT: Dependencies set during creation
 bd create "Task name" \
   --parent [epic-id] \
-  --blocks [blocking-task-id] \
-  --blocks [another-blocker]
+  --deps [blocking-task-id] \
+  --deps [another-blocker]
 
 # ❌ INEFFICIENT: Separate dep add commands
 bd create "Task name"
 bd dep add [epic-id] [task-id] --type parent-child
-bd dep add [task-id] [blocker] --type blocks
+bd dep add [task-id] [blocker]
 ```
 
 Benefits:
@@ -72,7 +72,7 @@ bd create "Plan: [Feature Name]" \
 
 #### Step 2: Create Task Issues with Dependencies
 
-For each implementation step, use `--parent` and `--blocks` flags to set dependencies during creation:
+For each implementation step, use `--parent` and `--deps` flags to set dependencies during creation:
 
 ```bash
 # Create task with parent and blocking relationships in one command
@@ -81,7 +81,7 @@ bd create "[Task Description]" \
   --type [feature|bug|task] \
   --description "Detailed implementation notes" \
   --parent [epic-id] \
-  --blocks [blocking-task-id] \
+  --deps [blocking-task-id] \
   --assignee [optional]
 ```
 
@@ -91,11 +91,12 @@ bd create "[Task Description]" \
 - Child task is created, parent epic depends on it
 - More efficient than separate `bd dep add` command
 
-**Using --blocks flag:**
+**Using --deps flag:**
 
-- Automatically creates `blocks` dependency
+- Automatically creates `blocks` dependencies when given bare issue IDs
 - New task depends on (is blocked by) the specified task
-- Multiple `--blocks` flags can be used for multiple blockers
+- Multiple `--deps` flags can be used for multiple blockers
+- You can also pass explicit typed values such as `--deps blocks:[issue-id]`
 
 **Alternative: Manual Dependency Management**
 If you need to add dependencies after creation:
@@ -134,6 +135,20 @@ bd dep tree [epic-id]
 # You should see child tasks indented under the epic
 # If children don't appear, dependencies are backwards
 ```
+
+#### Step 3: Capture IDs Reliably for Scripting
+
+`bd create --json` now returns the created issue object directly, not an `.issues` array. Extract IDs with `.id`:
+
+```bash
+EPIC=$(bd create "Plan: [Feature Name]" \
+  --priority 0 \
+  --type epic \
+  --description "Executive summary and technical approach" \
+  --json | jq -r '.id')
+```
+
+For ready work scoped to an epic, prefer native filters such as `bd ready --parent [epic-id]` instead of grepping JSON by ID prefix.
 
 #### Step 4: Verify Plan Structure
 
@@ -197,9 +212,10 @@ Use `bd ready` to find next available work.
 ```bash
 bd list --type epic                    # See all epics
 bd show [epic-id]                      # Epic details
-bd dep tree [epic-id]                  # Full plan structure
+bd list --parent [epic-id]             # Child issues under the epic
+bd dep tree [epic-id] --direction=up   # Full dependency structure from the epic outward
 bd ready                               # What can be worked on now
-bd blocked                             # What's waiting on dependencies
+bd blocked --parent [epic-id]          # What's waiting on dependencies
 ```
 
 #### Work on Plan
@@ -207,7 +223,7 @@ bd blocked                             # What's waiting on dependencies
 ```bash
 bd ready                               # Find next task
 bd update [issue-id] --status in_progress  # Start work
-bd comment [issue-id]                  # Add progress notes
+bd comments add [issue-id] "Progress update"  # Add progress notes
 bd close [issue-id]                    # Complete task
 bd ready                               # Find next task
 ```
@@ -215,9 +231,9 @@ bd ready                               # Find next task
 #### Track Progress
 
 ```bash
-bd stats                               # Overall progress
+bd status                              # Overall progress
 bd list --status open                  # Remaining work
-bd list --status closed                # Completed work
+bd list --status closed --all          # Completed work
 bd stale                               # Issues not recently updated
 ```
 
@@ -259,7 +275,7 @@ When user provides requirements:
 
 Given requirements: "Build user authentication with email/password and JWT tokens"
 
-**Efficient approach using --parent and --blocks:**
+**Efficient approach using --parent and --deps:**
 
 ```bash
 # Step 1: Create epic (assuming it gets ID proj-100)
@@ -267,49 +283,52 @@ EPIC=$(bd create "Plan: User Authentication System" \
   --type epic \
   --priority 0 \
   --description "Complete user auth with email/password and JWT" \
-  --json | jq -r '.issues[0].id')
+  --json | jq -r '.id')
 
 # Step 2: Create tasks with dependencies in one command each
 # First task (no blockers)
 SCHEMA=$(bd create "Design database schema for users table" \
   --parent $EPIC \
-  --json | jq -r '.issues[0].id')
+  --json | jq -r '.id')
 
 # Tasks that depend on schema
 REG=$(bd create "Implement user registration endpoint" \
   --parent $EPIC \
-  --blocks $SCHEMA \
-  --json | jq -r '.issues[0].id')
+  --deps $SCHEMA \
+  --json | jq -r '.id')
 
 HASH=$(bd create "Implement password hashing with bcrypt" \
   --parent $EPIC \
-  --blocks $SCHEMA \
-  --json | jq -r '.issues[0].id')
+  --deps $SCHEMA \
+  --json | jq -r '.id')
 
 # JWT utility (no dependencies)
 JWT=$(bd create "Create JWT token generation utility" \
   --parent $EPIC \
-  --json | jq -r '.issues[0].id')
+  --json | jq -r '.id')
 
 # Login needs JWT utility and registration
-bd create "Implement login endpoint with token issuance" \
+LOGIN=$(bd create "Implement login endpoint with token issuance" \
   --parent $EPIC \
-  --blocks $JWT \
-  --blocks $REG
+  --deps $JWT \
+  --deps $REG \
+  --json | jq -r '.id')
 
-# Middleware needs login (get login ID from previous command if needed)
-bd create "Add authentication middleware" \
+# Middleware needs login
+MIDDLEWARE=$(bd create "Add authentication middleware" \
   --parent $EPIC \
-  --blocks proj-105  # Login endpoint ID
+  --deps $LOGIN \
+  --json | jq -r '.id')
 
-# Tests need everything (use final --blocks for last critical task)
+# Tests need middleware
 bd create "Write integration tests for auth flow" \
   --parent $EPIC \
-  --blocks proj-106  # Middleware ID
+  --deps $MIDDLEWARE
 
 # Step 3: View the plan
-bd dep tree $EPIC
-bd ready
+bd list --parent $EPIC
+bd dep tree $EPIC --direction=up
+bd ready --parent $EPIC
 ```
 
 **Alternative: Old approach (less efficient but works)**
@@ -326,8 +345,8 @@ bd dep add proj-100 proj-101 --type parent-child
 bd dep add proj-100 proj-102 --type parent-child
 # ... repeat for all parent-child relationships
 
-bd dep add proj-102 proj-101 --type blocks
-bd dep add proj-103 proj-101 --type blocks
+bd dep add proj-102 proj-101
+bd dep add proj-103 proj-101
 # ... repeat for all blocking relationships
 ```
 
@@ -362,25 +381,16 @@ bd create "Integrate with API" \
 When plan is complete:
 
 ```bash
-bd cleanup --age 30d    # Archive old closed issues
+bd purge --older-than 30d --dry-run  # Preview ephemeral cleanup
 bd compact              # Compress issue history
 ```
 
 ### Advanced Features
 
-#### Templates
-
-Create issue templates for common task types:
-
-```bash
-bd template create feature-task
-# Opens editor with template
-```
-
 #### Comments for Progress
 
 ```bash
-bd comment [issue-id]
+bd comments add [issue-id] "Progress note"
 # Add detailed progress notes, blockers, decisions
 ```
 

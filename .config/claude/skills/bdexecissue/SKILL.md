@@ -63,7 +63,7 @@ Read the description, acceptance criteria, and any existing comments carefully.
 After each meaningful commit:
 
 ```bash
-bd comment [issue-id] "Commit [hash]: [what was done]"
+bd comments add [issue-id] "Commit [hash]: [what was done]"
 ```
 
 ### 4. Complete the Issue
@@ -117,10 +117,10 @@ bd create "Fix: [blocker description]" \
   --description "Discovered while working on [issue-id]"
 
 # Link dependency
-bd dep add [issue-id] [blocker-id] --type blocks
+bd dep add [issue-id] [blocker-id]
 
 # Comment on original
-bd comment [issue-id] "Blocked by [blocker-id]: [reason]"
+bd comments add [issue-id] "Blocked by [blocker-id]: [reason]"
 
 # Reopen original issue
 bd update [issue-id] --status open
@@ -135,7 +135,7 @@ If you find additional work needed:
 ```bash
 bd create "[New task]" \
   --description "Discovered during [issue-id]: [context]"
-bd comment [issue-id] "Created [new-id] for [reason]"
+bd comments add [issue-id] "Created [new-id] for [reason]"
 ```
 
 Continue with the original issue unless it's truly blocked.

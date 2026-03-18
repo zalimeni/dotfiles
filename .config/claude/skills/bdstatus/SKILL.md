@@ -23,7 +23,7 @@ Optional: epic ID to scope the status view. If not provided, shows full project 
 Run these commands and collect the output:
 
 ```bash
-bd stats                    # Overall progress (open/closed/total)
+bd status                   # Overall progress (open/closed/total)
 bd ready                    # Issues ready to work on now
 bd blocked                  # Issues waiting on dependencies
 bd list --status in_progress  # Currently active work
@@ -32,7 +32,8 @@ bd list --status in_progress  # Currently active work
 If scoped to an epic:
 ```bash
 bd show [epic-id]           # Epic details
-bd dep tree [epic-id]       # Dependency structure
+bd list --parent [epic-id]  # Child issues under the epic
+bd dep tree [epic-id] --direction=up  # Dependency structure from the epic outward
 ```
 
 ### 2. Present Summary

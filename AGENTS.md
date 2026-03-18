@@ -1,6 +1,6 @@
 # Agent Instructions
 
-This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
+This project uses **bd** (beads) for issue tracking. Run `bd prime` to get started.
 
 ## Quick Reference
 
@@ -9,7 +9,7 @@ bd ready              # Find available work
 bd show <id>          # View issue details
 bd update <id> --status in_progress  # Claim work
 bd close <id>         # Complete work
-bd vc commit -m "..." # Commit pending beads Dolt changes when needed
+bd dolt commit -m "..." # Commit pending beads Dolt changes when needed
 ```
 
 ## Session Completion
@@ -18,7 +18,7 @@ Work is NOT complete until `git push` succeeds. Follow the session-close protoco
 `git pull --rebase && git push`
 
 If `bd doctor` reports uncommitted Dolt changes, commit them first with
-`bd vc commit -m "..."`.
+`bd dolt commit -m "..."`.
 
 ## Pull Requests
 

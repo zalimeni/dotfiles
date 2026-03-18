@@ -58,7 +58,7 @@ If the epic doesn't exist, inform the user and suggest running `/bdplan` first.
 
 Verify there are ready issues for the epic:
 ```bash
-bd ready --json | jq -r '.[] | select(.id | startswith("'"$epic_id"'")) | .id'
+bd ready --parent "$epic_id"
 ```
 
 If no ready work exists, warn the user that the agent will have nothing to execute.
