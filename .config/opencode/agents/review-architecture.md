@@ -2,7 +2,7 @@
 name: review-architecture
 description: Reviews changes for architectural compliance and service boundary integrity
 mode: subagent
-model: openai/gpt-5.4
+model: github-copilot/gpt-5.4
 tools:
   bash: false
   edit: false
