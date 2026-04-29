@@ -97,6 +97,59 @@ install_opencode() {
   info "  4. Set CONTEXT7_KEY env var (or Claude Environments UI) for context7 MCP"
 }
 
+# --- Remote skills ----------------------------------------------------------
+
+install_remote_skills() {
+  local manifest="$DOTFILES_DIR/.config/claude/skills/remote-skills.manifest"
+  if [ ! -f "$manifest" ]; then
+    warn "no remote-skills.manifest found, skipping remote skill downloads"
+    return
+  fi
+
+  info "downloading remote skills"
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    # Skip blanks and comments
+    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+
+    local skill_name repo repo_path
+    read -r skill_name repo repo_path <<< "$line"
+
+    local dest="$HOME/.claude/skills/$skill_name"
+
+    # Download SKILL.md (and any sibling files) from the GitHub repo.
+    # We use the GitHub API to list directory contents, then curl each file.
+    local api_url="https://api.github.com/repos/$repo/contents/$repo_path?ref=main"
+    local file_list
+    file_list="$(curl -fsSL "$api_url" 2>/dev/null)" || {
+      warn "failed to fetch file list for skill '$skill_name' from $repo"
+      continue
+    }
+
+    # Remove stale symlink (e.g. from previous install that symlinked into repo)
+    [ -L "$dest" ] && rm "$dest"
+    mkdir -p "$dest"
+
+    # Parse JSON array — each element has "name" and "download_url".
+    # Use grep+sed to avoid a hard jq dependency (jq may not exist on
+    # sandbox Linux images).
+    local names urls
+    names="$(echo "$file_list" | grep '"name"' | sed 's/.*"name": *"\([^"]*\)".*/\1/')"
+    urls="$(echo "$file_list" | grep '"download_url"' | sed 's/.*"download_url": *"\([^"]*\)".*/\1/')"
+
+    # Walk both lists in lockstep
+    paste <(echo "$names") <(echo "$urls") | while IFS=$'\t' read -r fname furl; do
+      [ -z "$fname" ] && continue
+      curl -fsSL "$furl" -o "$dest/$fname" 2>/dev/null || {
+        warn "failed to download $fname for skill '$skill_name'"
+        continue
+      }
+    done
+
+    ok "downloaded skill '$skill_name' from $repo"
+  done < "$manifest"
+}
+
 # --- Claude Code config -----------------------------------------------------
 
 install_claude() {
@@ -113,13 +166,25 @@ install_claude() {
   # config.json (MCP servers, LSP)
   link_file "$DOTFILES_DIR/.config/claude/config.json" "$claude_dir/config.json"
 
-  # Skills — per-skill symlinks
+  # Skills — per-skill symlinks (skip remote skills already in ~/.claude/skills/)
   if [ -d "$DOTFILES_DIR/.config/claude/skills" ]; then
     mkdir -p "$claude_dir/skills"
+    # Build set of remote skill names to skip
+    local manifest="$DOTFILES_DIR/.config/claude/skills/remote-skills.manifest"
+    local -A remote_skills=()
+    if [ -f "$manifest" ]; then
+      while IFS= read -r _line || [ -n "$_line" ]; do
+        [[ -z "$_line" || "$_line" =~ ^[[:space:]]*# ]] && continue
+        local _rname; read -r _rname _ _ <<< "$_line"
+        remote_skills["$_rname"]=1
+      done < "$manifest"
+    fi
     for skill_dir in "$DOTFILES_DIR/.config/claude/skills"/*/; do
       [ -d "$skill_dir" ] || continue
       local skill_name
       skill_name="$(basename "$skill_dir")"
+      # Skip remote skills — they're downloaded directly to ~/.claude/skills/
+      [[ -n "${remote_skills[$skill_name]+x}" ]] && continue
       link_file "$skill_dir" "$claude_dir/skills/$skill_name"
     done
     ok "linked skills"
@@ -285,6 +350,7 @@ main() {
   echo ""
 
   generate_agent_config
+  install_remote_skills
   install_opencode
   install_claude
   install_git
