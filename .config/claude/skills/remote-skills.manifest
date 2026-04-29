@@ -1,0 +1,13 @@
+# Remote Skills Manifest
+#
+# Skills listed here are downloaded from GitHub during install instead of being
+# vendored in the dotfiles repo. Each non-blank, non-comment line has the form:
+#
+#   <skill-name>  <github-owner>/<repo>  <path-inside-repo>
+#
+# <path-inside-repo> is the directory that contains SKILL.md (and any other
+# files the skill needs). The installer downloads the entire directory.
+#
+# To add a new marketplace skill, append a line here and re-run install.sh.
+
+caveman  JuliusBrussee/caveman  skills/caveman

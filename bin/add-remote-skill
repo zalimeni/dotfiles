@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+#
+# add-remote-skill — register a Claude marketplace skill for download.
+#
+# Usage:
+#   add-remote-skill <owner/repo> [skill-name] [--install]
+#
+# Examples:
+#   add-remote-skill JuliusBrussee/caveman
+#   add-remote-skill JuliusBrussee/caveman caveman --install
+#
+# The script:
+#   1. Probes the GitHub repo to locate SKILL.md
+#   2. Adds an entry to remote-skills.manifest
+#   3. Optionally downloads the skill immediately (--install)
+#
+set -euo pipefail
+
+DOTFILES_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+MANIFEST="$DOTFILES_DIR/.config/claude/skills/remote-skills.manifest"
+
+info()  { printf '  [ \033[00;34m..\033[0m ] %s\n' "$1"; }
+ok()    { printf '  [ \033[00;32mOK\033[0m ] %s\n' "$1"; }
+warn()  { printf '  [ \033[0;33m!!\033[0m ] %s\n' "$1"; }
+fail()  { printf '  [\033[0;31mFAIL\033[0m] %s\n' "$1"; exit 1; }
+
+usage() {
+  echo "Usage: add-remote-skill <owner/repo> [skill-name] [--install]"
+  exit 1
+}
+
+# --- args -------------------------------------------------------------------
+
+[[ $# -lt 1 ]] && usage
+
+REPO="$1"
+SKILL_NAME="${2:-}"
+DO_INSTALL=false
+
+for arg in "$@"; do
+  [[ "$arg" == "--install" ]] && DO_INSTALL=true
+done
+
+# Strip --install from SKILL_NAME if it landed there
+[[ "$SKILL_NAME" == "--install" ]] && SKILL_NAME=""
+
+# Validate repo format
+[[ "$REPO" =~ ^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$ ]] || fail "repo must be owner/repo format, got: $REPO"
+
+# --- locate SKILL.md -------------------------------------------------------
+
+info "probing $REPO for SKILL.md"
+
+# Common locations, in preference order
+CANDIDATE_PATHS=(
+  "skills/${REPO##*/}"
+  "skills"
+  "skill"
+  "."
+)
+
+SKILL_PATH=""
+for cpath in "${CANDIDATE_PATHS[@]}"; do
+  api_url="https://api.github.com/repos/$REPO/contents/$cpath?ref=main"
+  response="$(curl -fsSL "$api_url" 2>/dev/null)" || continue
+
+  if echo "$response" | grep -q '"name": "SKILL.md"'; then
+    SKILL_PATH="$cpath"
+    break
+  fi
+done
+
+[[ -z "$SKILL_PATH" ]] && fail "could not find SKILL.md in $REPO (checked: ${CANDIDATE_PATHS[*]})"
+ok "found SKILL.md at $SKILL_PATH"
+
+# --- derive skill name ------------------------------------------------------
+
+if [[ -z "$SKILL_NAME" ]]; then
+  # Use the repo name by default
+  SKILL_NAME="${REPO##*/}"
+fi
+
+info "skill name: $SKILL_NAME"
+
+# --- check for duplicates ---------------------------------------------------
+
+if grep -q "^${SKILL_NAME} " "$MANIFEST" 2>/dev/null; then
+  fail "skill '$SKILL_NAME' already exists in manifest"
+fi
+
+# --- append to manifest -----------------------------------------------------
+
+echo "$SKILL_NAME  $REPO  $SKILL_PATH" >> "$MANIFEST"
+ok "added to manifest: $SKILL_NAME  $REPO  $SKILL_PATH"
+
+# --- optional immediate download --------------------------------------------
+
+if $DO_INSTALL; then
+  info "downloading skill '$SKILL_NAME'"
+  # Source the installer functions and run the download
+  (
+    source "$DOTFILES_DIR/install.sh" 2>/dev/null || true
+    # Re-export DOTFILES_DIR since sourcing install.sh runs main
+  ) 2>/dev/null || true
+
+  # Inline download (same logic as install_remote_skills but for one skill)
+  dest="$HOME/.claude/skills/$SKILL_NAME"
+  api_url="https://api.github.com/repos/$REPO/contents/$SKILL_PATH?ref=main"
+  file_list="$(curl -fsSL "$api_url" 2>/dev/null)" || fail "failed to fetch file list"
+
+  mkdir -p "$dest"
+
+  names="$(echo "$file_list" | grep '"name"' | sed 's/.*"name": *"\([^"]*\)".*/\1/')"
+  urls="$(echo "$file_list" | grep '"download_url"' | sed 's/.*"download_url": *"\([^"]*\)".*/\1/')"
+
+  paste <(echo "$names") <(echo "$urls") | while IFS=$'\t' read -r fname furl; do
+    [ -z "$fname" ] && continue
+    curl -fsSL "$furl" -o "$dest/$fname" 2>/dev/null || {
+      warn "failed to download $fname"
+      continue
+    }
+  done
+
+  ok "downloaded skill '$SKILL_NAME' to $dest"
+fi
+
+echo ""
+ok "done — run './install.sh' to download and link (or re-run with --install)"
