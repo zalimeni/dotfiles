@@ -2,7 +2,7 @@
 name: review-general
 description: General code quality reviewer for correctness, security basics, and maintainability
 mode: subagent
-model: github-copilot/gpt-5.4
+model: github-copilot/claude-opus-4.6
 tools:
   bash: false
   edit: false
