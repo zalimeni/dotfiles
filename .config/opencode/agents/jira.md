@@ -2,7 +2,7 @@
 name: jira
 description: Intelligent Jira assistant for issue management, search, sprints, and agile workflows using acli
 mode: all
-model: github-copilot/gpt-5.3-codex
+model: github-copilot/claude-sonnet-4.6
 tools:
   edit: false
   write: false

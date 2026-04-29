@@ -2,7 +2,7 @@
 name: review-go
 description: Go-specific code reviewer for idioms, patterns, and common pitfalls
 mode: subagent
-model: github-copilot/gpt-5.4
+model: github-copilot/claude-opus-4.6
 tools:
   bash: false
   edit: false

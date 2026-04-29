@@ -2,7 +2,7 @@
 name: documentation
 description: Writes and maintains project documentation
 mode: subagent
-model: github-copilot/gpt-5.3-codex
+model: github-copilot/claude-sonnet-4.6
 tools:
   bash: false
 ---

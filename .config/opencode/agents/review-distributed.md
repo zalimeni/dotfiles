@@ -2,7 +2,7 @@
 name: review-distributed
 description: Distributed systems reviewer for consistency, fault tolerance, and coordination patterns
 mode: subagent
-model: github-copilot/gpt-5.4
+model: github-copilot/claude-opus-4.6
 tools:
   bash: false
   edit: false

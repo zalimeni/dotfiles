@@ -2,7 +2,7 @@
 name: review
 description: Code review orchestrator that delegates to specialized reviewers and synthesizes findings
 mode: all
-model: github-copilot/gpt-5.4
+model: github-copilot/claude-opus-4.6
 tools:
   edit: false
   write: false
