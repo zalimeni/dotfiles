@@ -26,6 +26,7 @@ When creating or updating a PR as the agent:
 
 - Ensure PR attribution is present either by relying on the repo's PR template and updating the PR afterward, or by including it directly in any custom PR body
 - If you write a custom PR description, end it with a final attribution line in this format: `🤖 Generated with OpenCode (<exact model>)`
+- If you write PR review comment replies, end each with a blank line then attribution in this format: `🤖 _Generated with OpenCode (<exact model>)_`
 - If you create a git commit, include commit-body attribution plus a co-author trailer using the exact model, for example:
   - `Generated with OpenCode (claude-opus-4.6).`
   - `Co-authored-by: OpenCode (claude-opus-4.6) <noreply@anthropic.com>`
