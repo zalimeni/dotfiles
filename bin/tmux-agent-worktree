@@ -71,6 +71,12 @@ agent_cmd_string=${agent_cmd_string% }
 echo "Creating git worktree at: $worktree_dir"
 git -C "$repo_root" worktree add -b "$branch_name" "$worktree_dir"
 
+# Initialize git submodules in worktree (e.g. cloud-makefiles for make targets)
+if [[ -f "$worktree_dir/.gitmodules" ]]; then
+  echo "Initializing git submodules in worktree..."
+  git -C "$worktree_dir" submodule update --init
+fi
+
 mkdir -p "$worktree_dir/.beads"
 printf '../%s/.beads\n' "$repo_name" > "$worktree_dir/.beads/redirect"
 
