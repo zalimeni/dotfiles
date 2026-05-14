@@ -27,6 +27,7 @@
 - **Commits**: Conventional Commits format
 - **Rebase / Squash**: When rebasing and squashing a branch, preserve the branch's primary commit message as the final squashed commit message. Check that message for accuracy against the branch's final combined changes and adjust it if needed, but do not replace it with a later secondary message such as a fix, refactor, or follow-up commit.
 - **PRs**: Always create draft PRs (`gh pr create --draft`) unless explicitly told otherwise
+- **Branch Naming**: Use `zalimeni/` prefix for branch names (not `mz/`)
 - **Test Plans**: Before opening a PR, look for test plan checkboxes (e.g., `- [ ]` items under a "Test Plan" or "Testing" section). Proactively run any that can be verified locally and check them off (`- [x]`). Leave items unchecked if they require manual/external verification.
 - **Restricted**: Don't modify generated code, vendor/, or build artifacts
 - **Branch Switching**: NEVER use `git stash` to save staged work when switching branches. If you need to verify something on another branch, either make a temporary commit on the current branch, use `git worktree`, or clone to a temp directory. Stashing staged work risks losing carefully prepared changes.
