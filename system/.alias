@@ -56,7 +56,6 @@ alias mci="mvn clean install"
 alias mcist="mvn clean install -DskipTests"
 
 # Claude Code
-alias claude=claude-aws
 alias c=claude
 
 # OpenCode
