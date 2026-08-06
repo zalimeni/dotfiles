@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+"""
+claude-nopush-guard: Claude Code PreToolUse hook that denies push-shaped Bash
+commands while no-push mode is active.
+
+Active when either marker exists:
+  ~/.claude/nopush                      global (all repos)
+  <repo>/.git/nopush                    per-repo, written by `git nopush enable`
+
+This is the harness-level layer. The git-level layer (pushurl + pre-push hook)
+is installed by bin/git-nopush and stands on its own if this hook is bypassed.
+
+Wired up in .config/claude/settings.json as a PreToolUse hook matching Bash.
+Reads the hook payload on stdin, writes a permission decision on stdout.
+"""
+
+import json
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+GLOBAL_MARKER = Path.home() / ".claude" / "nopush"
+
+# Command shapes that can publish work or dismantle the block.
+BLOCKED = [
+    (r"\bgit\b[^|;&]*\bpush\b", "git push"),
+    (r"\bgh\b[^|;&]*\b(pr|release)\b[^|;&]*\b(create|merge|edit|ready)\b", "gh publish command"),
+    (r"\bbd\b[^|;&]*\bdolt\b[^|;&]*\bpush\b", "bd dolt push"),
+    (r"\bgit\b[^|;&]*\bremote\b[^|;&]*\b(set-url|add)\b", "git remote rewrite"),
+    (r"\bgit\b[^|;&]*\bconfig\b[^|;&]*\bpushurl\b", "pushurl edit"),
+    (r"\bgit[- ]nopush\b[^|;&]*\bdisable\b", "no-push mode disable"),
+    (r"\bpre-push\b", "pre-push hook edit"),
+]
+
+# Read-only git commands that merely mention "push" are fine.
+EXEMPT = re.compile(r"\bgit\b[^|;&]*\b(log|show|grep|diff|help|config --get)\b")
+
+
+def marker_text(cwd: str) -> str | None:
+    if GLOBAL_MARKER.is_file():
+        return GLOBAL_MARKER.read_text().strip() or "global no-push mode active"
+
+    try:
+        common = subprocess.run(
+            ["git", "rev-parse", "--git-common-dir"],
+            cwd=cwd, capture_output=True, text=True, timeout=5,
+        )
+        top = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=cwd, capture_output=True, text=True, timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+    if common.returncode != 0 or top.returncode != 0:
+        return None
+
+    marker = Path(top.stdout.strip()) / common.stdout.strip() / "nopush"
+    if marker.is_file():
+        return marker.read_text().strip() or "no-push mode active for this repo"
+    return None
+
+
+def deny(reason: str) -> None:
+    json.dump(
+        {
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "deny",
+                "permissionDecisionReason": reason,
+            }
+        },
+        sys.stdout,
+    )
+    sys.exit(0)
+
+
+def main() -> None:
+    try:
+        payload = json.load(sys.stdin)
+    except (json.JSONDecodeError, ValueError):
+        sys.exit(0)
+
+    if payload.get("tool_name") != "Bash":
+        sys.exit(0)
+
+    command = payload.get("tool_input", {}).get("command", "")
+    if not command:
+        sys.exit(0)
+
+    hit = next((label for pattern, label in BLOCKED if re.search(pattern, command)), None)
+    if hit is None:
+        sys.exit(0)
+    if hit == "git push" and EXEMPT.search(command):
+        sys.exit(0)
+
+    note = marker_text(payload.get("cwd") or os.getcwd())
+    if note is None:
+        sys.exit(0)
+
+    deny(
+        f"Blocked by no-push mode ({hit}). Work stays local until the user clears it.\n"
+        f"{note}\n\n"
+        "Commit locally instead, and report that the branch is ready but unpushed. "
+        "Do not work around this by editing git config, adding remotes, or using "
+        "--no-verify. Only the user lifts the block, by running `git nopush disable` "
+        "themselves."
+    )
+
+
+if __name__ == "__main__":
+    main()

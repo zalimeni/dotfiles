@@ -35,11 +35,24 @@
       "Skill(skill:bdloop)",
       "Skill(skill:bdplan)",
       "Skill(skill:bdreview)",
-      "Skill(skill:bdstatus)"
+      "Skill(skill:bdstatus)",
+      "Skill(skill:nopush)"
     ]
   },
-  "model": "claude-fable-5[1m]",
+  "model": "opus",
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/michael.zalimeni/workspace/dotfiles/bin/claude-nopush-guard",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "matcher": "",

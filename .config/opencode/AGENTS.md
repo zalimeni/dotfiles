@@ -30,6 +30,7 @@
 - **Branch Naming**: Use `zalimeni/` prefix for branch names (not `mz/`)
 - **Test Plans**: Before opening a PR, look for test plan checkboxes (e.g., `- [ ]` items under a "Test Plan" or "Testing" section). Proactively run any that can be verified locally and check them off (`- [x]`). Leave items unchecked if they require manual/external verification.
 - **Restricted**: Don't modify generated code, vendor/, or build artifacts
+- **No-Push Mode**: If `git nopush status` reports ON for the repo, or `~/.claude/nopush` exists, local-only mode is active. Do not push, open PRs, or run `bd dolt push`, and do not disable the block yourself — load the **nopush** skill for the full rules. This mode overrides every "must push" instruction below, including the beads session-close protocol.
 - **Branch Switching**: NEVER use `git stash` to save staged work when switching branches. If you need to verify something on another branch, either make a temporary commit on the current branch, use `git worktree`, or clone to a temp directory. Stashing staged work risks losing carefully prepared changes.
 
 ## Jira / Atlassian
@@ -45,6 +46,8 @@ When working on beads issues (via bd CLI), follow the rules below. Ignore them f
 ### Landing the Plane (Session Completion)
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
+
+**Exception — no-push mode.** If `git nopush status` reports ON, or `~/.claude/nopush` exists, skip steps 4's push and `bd dolt push` entirely. The session is complete once work is committed locally. Report the branch name and that it is unpushed. Do not disable the block; only the user does that.
 
 **MANDATORY WORKFLOW:**
 
@@ -90,7 +93,7 @@ bd create "Task name" --body-file "$TMPDIR/bd-desc.md"
 bd comments add proj-5 "Completed implementation, tests passing"
 ```
 
-**CRITICAL RULES:**
+**CRITICAL RULES:** (all suspended while no-push mode is active)
 - Work is NOT complete until `git push` succeeds
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push
