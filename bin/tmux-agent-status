@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+script_name=$(basename "$0")
+lines=4
+watch_interval=""
+filter=""
+
+usage() {
+  cat >&2 <<EOF
+Usage: $script_name [-n LINES] [-w SECONDS] [FILTER]
+
+Show the tail of every tmux session's active pane, so all agent worktrees can
+be checked at once without attaching.
+
+Options:
+  -n LINES     Lines of pane output to show per session (default: $lines)
+  -w SECONDS   Refresh continuously every SECONDS instead of printing once
+  FILTER       Only show sessions whose name contains this substring
+
+Examples:
+  $script_name                 # one-shot status for all sessions
+  $script_name -n 8            # more context per session
+  $script_name -w 10           # live dashboard, refresh every 10s
+  $script_name cypher          # only sessions matching "cypher"
+EOF
+}
+
+while getopts ':n:w:h' opt; do
+  case "$opt" in
+    n) lines=$OPTARG ;;
+    w) watch_interval=$OPTARG ;;
+    h)
+      usage
+      exit 0
+      ;;
+    :)
+      echo "Error: -$OPTARG requires an argument" >&2
+      usage
+      exit 1
+      ;;
+    *)
+      echo "Error: Unknown option -$OPTARG" >&2
+      usage
+      exit 1
+      ;;
+  esac
+done
+shift $((OPTIND - 1))
+filter=${1-}
+
+if ! command -v tmux >/dev/null 2>&1; then
+  echo "Error: tmux not found" >&2
+  exit 1
+fi
+
+print_status() {
+  local sessions
+  if ! sessions=$(tmux list-sessions -F '#S' 2>/dev/null); then
+    echo "No tmux server running."
+    return 0
+  fi
+
+  local found=false
+  local session
+  while IFS= read -r session; do
+    [[ -z "$session" ]] && continue
+    if [[ -n "$filter" && "$session" != *"$filter"* ]]; then
+      continue
+    fi
+    found=true
+
+    local worktree
+    worktree=$(tmux display-message -p -t "$session" '#{pane_current_path}' 2>/dev/null || echo '?')
+
+    printf '\n\033[1;36m=== %s\033[0m  \033[2m(%s)\033[0m\n' "$session" "$worktree"
+
+    # Drop blank lines, box rules, and the harness footer so the tail is real output.
+    local status_line
+    status_line=$(tmux capture-pane -p -t "$session" 2>/dev/null |
+      grep -E '(tokens|esc to interrupt)' |
+      tail -n 1 |
+      sed 's/^[[:space:]]*//')
+
+    tmux capture-pane -p -t "$session" 2>/dev/null |
+      grep -v '^[[:space:]]*$' |
+      grep -vE '^[[:space:]]*[─━]+[[:space:]]*$' |
+      grep -vE 'bypass permissions|shift\+tab to cycle|for agents · ↓ to manage|tokens$' |
+      tail -n "$lines" |
+      sed 's/^/  /'
+
+    if [[ -n "$status_line" ]]; then
+      printf '  \033[2m%s\033[0m\n' "$status_line"
+    fi
+  done <<<"$sessions"
+
+  if [[ "$found" == false ]]; then
+    if [[ -n "$filter" ]]; then
+      echo "No sessions matching '$filter'."
+    else
+      echo "No tmux sessions."
+    fi
+  fi
+}
+
+if [[ -n "$watch_interval" ]]; then
+  trap 'printf "\n"; exit 0' INT
+  while true; do
+    clear
+    printf '\033[2mtmux agent status — %s (refresh %ss, Ctrl-C to stop)\033[0m\n' "$(date '+%H:%M:%S')" "$watch_interval"
+    print_status
+    sleep "$watch_interval"
+  done
+else
+  print_status
+fi
