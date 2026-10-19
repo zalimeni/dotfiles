@@ -18,58 +18,32 @@ When creating or updating Jira work items:
 - If code is referenced in the description, use Markdown links to exact files and line anchors in the repository UI, not plain text paths.
 - After create or edit operations that should set team, verify the stored team field value and repair it immediately if it did not stick.
 
-## Project-Specific Configuration
+## Team Fields and Epics
 
-### InfraGraph Project (IG)
-
-**Project Information:**
-- **Project Key**: `IG`
-- **Team Field**: `customfield_10001`
-- **Default Team Value**: `InfraGraph-Graph Engine`
-
-**Creating Issues:**
-
-When creating Jira issues for the InfraGraph project, always include the team field and a Markdown description:
+Teams are usually a custom field (for example `customfield_10001`). Look up the field ID and the exact team value for the project before you set it; ask the user if it is unclear.
 
 ```bash
 # Create a task with markdown description and team field
 cat > "$TMPDIR/jira-desc.md" <<'EOF'
 ## Context
-- Investigate the failing traversal path.
+- Investigate the failing request path.
 
 ## Code References
-- [`graph/query/planner.go#L42`](https://github.com/example/repo/blob/main/graph/query/planner.go#L42)
+- [`pkg/server/handler.go#L42`](https://github.com/example/repo/blob/main/pkg/server/handler.go#L42)
 EOF
 
 acli jira workitem create \
-  --project IG \
+  --project PROJ \
   --type Task \
   --summary "Task summary" \
   --description "$(cat "$TMPDIR/jira-desc.md")" \
-  --custom "customfield_10001=InfraGraph-Graph Engine"
+  --custom "customfield_10001=<Team Name>"
+
+# Verify the team field after creation
+acli jira workitem view PROJ-123 --json | jq '{key: .key, team: .fields.customfield_10001}'
 ```
 
-Verify the team field after creation:
-
-```bash
-acli jira workitem view IG-123 --json | jq '{key: .key, team: .fields.customfield_10001}'
-```
-
-**Linking to Epics:**
-
-When creating issues under an epic, use the `--parent` flag. This often inherits the team field from the parent epic, but you should still verify that the team field is populated:
-
-```bash
-# Create a subtask under an epic (verify inherited team field)
-acli jira workitem create \
-  --project IG \
-  --type Task \
-  --summary "Subtask summary" \
-  --description "$(cat "$TMPDIR/jira-desc.md")" \
-  --parent IG-1234
-```
-
-**Note**: When linking to an epic via `--parent`, `customfield_10001` is usually inherited from the parent, but do not assume it worked without verification.
+When you create issues under an epic, use `--parent PROJ-1234`. The team field is often inherited from the epic, but check it anyway.
 
 ## Authentication
 
@@ -210,7 +184,7 @@ acli jira workitem edit --key "KEY-123" --summary "Updated summary"
 acli jira workitem edit --key "KEY-1,KEY-2" --assignee "user@example.com"
 
 # Repair or set a team custom field explicitly
-acli jira workitem edit --key "KEY-123" --custom "customfield_10001=InfraGraph-Graph Engine"
+acli jira workitem edit --key "KEY-123" --custom "customfield_10001=<Team Name>"
 
 # Edit work items matching a JQL query
 acli jira workitem edit --jql "project = PROJ" --assignee "user@example.com" --yes
