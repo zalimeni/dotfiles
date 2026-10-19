@@ -8,9 +8,11 @@ Personal dotfiles for macOS. Shell functions, aliases, git config, terminal setu
 bat/              bat config + everforest theme
 bin/              custom scripts (tmux-sessionizer, git helpers, etc.)
 cmd/              Go CLI commands (sp2md)
-git/              git config overrides (hashi/.gitconfig)
+git/              shared git config (.gitconfig, included globally) + overrides (hashi/.gitconfig)
 internal/         Go library code
 system/           shell aliases (.alias) and functions (.function)
+vim/              minimal .vimrc
+zsh/              zsh4humans .zshrc/.zshenv, .p10k.zsh prompt, .zshrc_custom
 wallpaper/        desktop wallpapers
 everforest_colors terminal color palette reference
 
@@ -18,6 +20,10 @@ everforest_colors terminal color palette reference
   claude/         Claude Code config (CLAUDE.md, settings.json, skills, agents)
   opencode/       OpenCode config (opencode.json, generated AGENTS.md, translated agents)
   ghostty/        Ghostty terminal config
+  git/            global git ignore + attributes
+  karabiner/      Karabiner-Elements key remaps
+  sandbox-exec/   macOS sandbox profile for running agents (run-sandboxed.sh)
+  tmuxinator/     tmuxinator session layouts
   k9s/            Kubernetes TUI config
   mise/           mise runtime/tool version manager
   ranger/         ranger file manager
@@ -58,7 +64,7 @@ from `AGENT_HARNESS` instead of a Claude-specific launcher name.
 
 ## Tools
 
-- **Shell**: zsh + oh-my-zsh
+- **Shell**: zsh + zsh4humans (powerlevel10k prompt, oh-my-zsh libs)
 - **Terminal**: Ghostty + tmux
 - **Editor**: neovim
 - **Go**: go, golangci-lint, staticcheck

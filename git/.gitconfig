@@ -1,0 +1,99 @@
+[alias]
+	c = checkout
+	ria = rebase -i --autosquash
+	rial = rebase -i --autosquash HEAD~2
+	pushf = push --force-with-lease
+	lga = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --all
+	lgd = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit -p
+	df = diff --color --color-words --abbrev
+	related = "!function git_related() { commit1=`git log -n 1 --format=\"%h\" $1` ; commit2=`git log -n 1 --format=\"%h\" $2` ; if git rev-list $commit1 | grep -q $commit2 ; then echo \"$2 is ancestor of $1\" ; elif git rev-list $commit2 | grep -q $commit1 ; then echo \"$1 is ancestor of $2\" ; else echo \"$1 unrelated to $2\" ; fi } ; git_related $1 $2"
+	branch-desc = branch --sort=-committerdate
+	branch-asc = branch --sort=-committerdate
+	change-commits = "!f() { VAR=$1; OLD=$2; NEW=$3; shift 3; git filter-branch --env-filter \"if [[ \\\"$`echo $VAR`\\\" = '$OLD' ]]; then export $VAR='$NEW'; fi\" $@; }; f "
+	cof = !git checkout $(git for-each-ref --sort=-committerdate --format='%(refname:short)' refs/heads/ | head -21 | fzf)
+	ci = commit --verbose
+	amend = commit --verbose --amend
+
+[branch]
+	sort = -committerdate
+
+[checkout]
+	defaultRemote = origin
+
+[color]
+	branch = auto
+	diff = auto
+	interactive = auto
+	status = auto
+
+[column]
+	ui = auto
+
+[commit]
+	verbose = true
+
+[core]
+	editor = nvim
+	autocrlf = input
+	pager = delta
+
+[delta]
+	navigate = true
+	light = false
+	side-by-side = true
+	syntax-theme = everforest-soft
+
+[diff]
+	colorMoved = default
+	mnemonicPrefix = true
+	renames = true
+	algorithm = histogram
+
+[fetch]
+	prune = true
+	pruneTags = true
+	all = true
+
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+
+[grep]
+	linenumber = true
+
+[help]
+	autocorrect = prompt
+
+[init]
+	defaultBranch = main
+
+[interactive]
+	diffFilter = delta --color-only
+
+[merge]
+	conflictstyle = diff3
+
+[pull]
+	rebase = true
+
+[push]
+	default = current
+	autoSetupRemote = true
+
+[rebase]
+	autoSquash = true
+	autoStash = true
+	updateRefs = true
+
+[rerere]
+	enabled = true
+	autoupdate = true
+
+[submodule]
+	recurse = true
+
+[url "git@github.com:"]
+	insteadOf = https://github.com/
+
