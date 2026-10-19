@@ -191,5 +191,8 @@
       "/Users/michael.zalimeni/Library/Caches"
     ]
   },
-  "skipDangerousModePermissionPrompt": true
+  "effortLevel": "high",
+  "skipDangerousModePermissionPrompt": true,
+  "inputNeededNotifEnabled": true,
+  "agentPushNotifEnabled": false
 }
