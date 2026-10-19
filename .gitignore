@@ -17,3 +17,6 @@ system/.work_function
 # Dolt database files (added by bd init)
 .dolt/
 *.db
+
+# Karabiner writes backups next to karabiner.json
+.config/karabiner/automatic_backups/

@@ -1,0 +1,56 @@
+name: work
+root: ~/
+
+windows:
+  - code:
+      # 2 pane layout - line in middle of camera 
+      layout: fb0d,424x87,0,0{205x87,0,0,0,218x87,206,0,4}
+      root: ~/workspace/github.com
+      # Synchronize all panes of this window, can be enabled before or after the pane commands run.
+      # 'before' represents legacy functionality and will be deprecated in a future release, in favour of 'after'
+      # synchronize: after
+      panes:
+        - sleep 1; clear 
+        - sleep 1; clear
+  - codetwo: 
+      layout: fb0d,424x87,0,0{205x87,0,0,0,218x87,206,0,4}
+      root: ~/workspace/github.com
+      # Synchronize all panes of this window, can be enabled before or after the pane commands run.
+      # 'before' represents legacy functionality and will be deprecated in a future release, in favour of 'after'
+      # synchronize: after
+      panes:
+        - sleep 1; clear
+        - sleep 1; clear
+  - codethree: 
+      layout: fb0d,424x87,0,0{205x87,0,0,0,218x87,206,0,4}
+      root: ~/workspace/github.com
+      # Synchronize all panes of this window, can be enabled before or after the pane commands run.
+      # 'before' represents legacy functionality and will be deprecated in a future release, in favour of 'after'
+      # synchronize: after
+      panes:
+        - sleep 1; clear
+        - sleep 1; clear
+  - shell: 
+      layout: bac0,484x93,0,0[484x35,0,0{242x35,0,0,3,120x35,243,0,8,120x35,364,0[120x17,364,0,9,120x17,364,18,10]},484x36,0,36,11,484x20,0,73,14]
+      #  layout: 2200,484x93,0,0[484x35,0,0{242x35,0,0,3,120x35,243,0,8,120x35,364,0[120x17,364,0,9,120x17,364,18,14]},484x44,0,36,10,484x12,0,81,11]
+      root: ~/
+      # Synchronize all panes of this window, can be enabled before or after the pane commands run.
+      # 'before' represents legacy functionality and will be deprecated in a future release, in favour of 'after'
+      # synchronize: after
+      panes:
+        - sleep 1; clear; 
+        - sleep 2; clear; podwatcher
+        - sleep 2; clear; kubewatcher 
+        - sleep 2; clear; nodewatcher 
+        - sleep 1; clear; 
+        - sleep 1; clear; 
+  - wiki: 
+      layout: fb0d,424x87,0,0{205x87,0,0,0,218x87,206,0,4}
+      root: ~/Sync/KB
+      # Synchronize all panes of this window, can be enabled before or after the pane commands run.
+      # 'before' represents legacy functionality and will be deprecated in a future release, in favour of 'after'
+      # synchronize: after
+      panes:
+        - clear; vi index.md
+        - clear
+

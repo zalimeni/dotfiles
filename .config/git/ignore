@@ -1,0 +1,6 @@
+**/.claude/settings.local.json
+
+# Global excludes (formerly ~/.gitignore)
+.DS_Store
+.idea/
+*.iml

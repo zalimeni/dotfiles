@@ -246,6 +246,12 @@ install_git() {
     ok "git user.email already set: $(git config --global user.email)"
   fi
 
+  # Shared settings and aliases (no identity — set above)
+  if [ -f "$DOTFILES_DIR/git/.gitconfig" ]; then
+    git config --global --replace-all include.path "$DOTFILES_DIR/git/.gitconfig"
+    ok "set include.path -> $DOTFILES_DIR/git/.gitconfig"
+  fi
+
   # includeIf for HashiCorp repos
   local hashi_cfg="$DOTFILES_DIR/git/hashi/.gitconfig"
   if [ -f "$hashi_cfg" ]; then
@@ -302,6 +308,29 @@ done"
   fi
 }
 
+# --- Home dotfiles and app config (macOS) -----------------------------------
+
+install_home_configs() {
+  info "linking home dotfiles and app config"
+
+  # zsh4humans setup; .zshrc sources zsh/.zshrc_custom
+  link_file "$DOTFILES_DIR/zsh/.zshenv" "$HOME/.zshenv"
+  link_file "$DOTFILES_DIR/zsh/.zshrc" "$HOME/.zshrc"
+  link_file "$DOTFILES_DIR/zsh/.p10k.zsh" "$HOME/.p10k.zsh"
+
+  link_file "$DOTFILES_DIR/vim/.vimrc" "$HOME/.vimrc"
+
+  # Global git ignore/attributes (XDG defaults, no core.excludesfile needed)
+  link_file "$DOTFILES_DIR/.config/git/ignore" "$HOME/.config/git/ignore"
+  link_file "$DOTFILES_DIR/.config/git/attributes" "$HOME/.config/git/attributes"
+
+  # Karabiner rewrites karabiner.json in place, so link the whole directory
+  link_file "$DOTFILES_DIR/.config/karabiner" "$HOME/.config/karabiner"
+
+  link_file "$DOTFILES_DIR/.config/tmuxinator" "$HOME/.config/tmuxinator"
+  link_file "$DOTFILES_DIR/.config/sandbox-exec" "$HOME/.config/sandbox-exec"
+}
+
 # --- Sandbox env file -------------------------------------------------------
 
 install_sandbox_env() {
@@ -356,7 +385,9 @@ main() {
   install_git
   install_shell
 
-  if [ "$PLATFORM" != "Darwin" ]; then
+  if [ "$PLATFORM" = "Darwin" ]; then
+    install_home_configs
+  else
     install_sandbox_env
   fi
 
