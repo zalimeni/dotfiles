@@ -1,12 +1,5 @@
 {
   "mcpServers": {
-    "gremlin": {
-      "command": "gremlin-mcp",
-      "args": [],
-      "env": {
-        "GREMLIN_URL": "ws://localhost:8182/gremlin"
-      }
-    },
     "context7": {
       "url": "https://mcp.context7.com/mcp",
       "transport": "sse",

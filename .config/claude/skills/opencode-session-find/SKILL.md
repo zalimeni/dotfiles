@@ -21,7 +21,7 @@ $ARGUMENTS
 
 Optional search terms. Can be:
 - A keyword to match against session titles (e.g., `auth refactor`)
-- A project path fragment (e.g., `infragraph`)
+- A project path fragment (e.g., `myproject`)
 - A date filter: `today`, `yesterday`, `7d`, `30d`, or `YYYY-MM-DD`
 - Multiple terms separated by spaces — all are ANDed together
 - No arguments = show 20 most recent sessions across all projects

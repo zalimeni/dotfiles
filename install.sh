@@ -252,15 +252,6 @@ install_git() {
     ok "set include.path -> $DOTFILES_DIR/git/.gitconfig"
   fi
 
-  # includeIf for HashiCorp repos
-  local hashi_cfg="$DOTFILES_DIR/git/hashi/.gitconfig"
-  if [ -f "$hashi_cfg" ]; then
-    git config --global --replace-all \
-      "includeIf.hasconfig:remote.*.url:git@github.com:hashicorp/**.path" \
-      "$hashi_cfg"
-    ok "set includeIf for hashicorp org -> $hashi_cfg"
-  fi
-
   # git helpers
   if [ -f "$DOTFILES_DIR/git/.githelpers" ]; then
     git config --global alias.lg "!source $DOTFILES_DIR/git/.githelpers && pretty_git_log"

@@ -116,7 +116,7 @@ When user says "create an issue/story/bug/task":
 7. Suggest next actions: "Would you like to add subtasks or link related issues?"
 
 Example:
-acli jira workitem create --project IG --type Task --summary "Fix bug" --description "$(cat \"$TMPDIR/jira-desc.md\")" --assignee "@me" --label "bug,critical" --custom "customfield_10001=InfraGraph-Graph Engine"
+acli jira workitem create --project PROJ --type Task --summary "Fix bug" --description "$(cat \"$TMPDIR/jira-desc.md\")" --assignee "@me" --label "bug,critical" --custom "customfield_10001=<Team Name>"
 ```
 
 #### Epic Creation Workflow
@@ -134,7 +134,7 @@ When creating an Epic:
 4. Suggest: "Would you like to add this epic to a sprint or board?"
 
 Example:
-acli jira workitem create --project IG --type Task --summary "Subtask" --parent IG-1234
+acli jira workitem create --project PROJ --type Task --summary "Subtask" --parent PROJ-1234
 ```
 
 #### Issue Transition Workflow
@@ -149,8 +149,8 @@ When user wants to change issue status:
 6. Confirm the transition
 
 Example:
-acli jira workitem transition --key IG-123 --status "In Progress"
-acli jira workitem comment create --key IG-123 --body "Starting work on this"
+acli jira workitem transition --key PROJ-123 --status "In Progress"
+acli jira workitem comment create --key PROJ-123 --body "Starting work on this"
 ```
 
 #### Sprint Planning Workflow
@@ -168,7 +168,7 @@ When user mentions sprint planning:
 6. Summarize sprint contents
 
 Examples:
-acli jira board search --project IG
+acli jira board search --project PROJ
 acli jira board list-sprints --id 123
 acli jira sprint list-workitems --sprint 456 --board 123
 ```
@@ -265,7 +265,7 @@ When updating multiple issues:
 Examples:
 acli jira workitem search --jql "sprint = 10 AND issuetype = Bug" --fields "key,summary"
 acli jira workitem edit --key "KEY-1,KEY-2,KEY-3" --assignee "@me"
-acli jira workitem edit --jql "project = IG AND status = 'To Do'" --assignee "user@example.com" --yes
+acli jira workitem edit --jql "project = PROJ AND status = 'To Do'" --assignee "user@example.com" --yes
 ```
 
 #### Batch Querying
@@ -280,7 +280,7 @@ When user needs information about multiple issues:
 
 Examples:
 acli jira workitem search --jql "issuetype = Epic" --fields "key,summary" --csv
-acli jira workitem search --jql "project = IG" --paginate --json
+acli jira workitem search --jql "project = PROJ" --paginate --json
 acli jira workitem search --jql "assignee = currentUser()" --count
 ```
 
@@ -336,7 +336,7 @@ Use bash with git commands to:
 - Link commits to Jira issues in comments
 
 Example: "What commits are related to PROJ-123?"
-→ git log --oneline --all --grep="IG-1343"
+→ git log --oneline --all --grep="PROJ-1343"
 → Show commit history
 → Suggest adding summary as comment to issue
 ```
