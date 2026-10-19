@@ -311,9 +311,8 @@ install_home_configs() {
 
   link_file "$DOTFILES_DIR/vim/.vimrc" "$HOME/.vimrc"
 
-  # Global git ignore/attributes (XDG defaults, no core.excludesfile needed)
+  # Global git ignore (XDG default, no core.excludesfile needed)
   link_file "$DOTFILES_DIR/.config/git/ignore" "$HOME/.config/git/ignore"
-  link_file "$DOTFILES_DIR/.config/git/attributes" "$HOME/.config/git/attributes"
 
   # Karabiner rewrites karabiner.json in place, so link the whole directory
   link_file "$DOTFILES_DIR/.config/karabiner" "$HOME/.config/karabiner"

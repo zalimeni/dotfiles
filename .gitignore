@@ -11,6 +11,9 @@ system/.work_function
 .aider*
 .claude/**
 
+# Go (make build output)
+/sp2md
+
 # Dolt database files (added by bd init)
 .dolt/
 *.db
