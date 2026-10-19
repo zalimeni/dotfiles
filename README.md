@@ -20,7 +20,7 @@ everforest_colors terminal color palette reference
   claude/         Claude Code config (CLAUDE.md, settings.json, skills, agents)
   opencode/       OpenCode config (opencode.json, generated AGENTS.md, translated agents)
   ghostty/        Ghostty terminal config
-  git/            global git ignore + attributes
+  git/            global git ignore
   karabiner/      Karabiner-Elements key remaps
   k9s/            Kubernetes TUI config
   mise/           mise runtime/tool version manager
