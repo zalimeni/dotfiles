@@ -24,17 +24,6 @@
   ],
 
   "mcp": {
-    // Gremlin graph database — requires a local gremlin-mcp binary and a
-    // running Gremlin server at ws://localhost:8182/gremlin
-    "gremlin": {
-      "type": "local",
-      "command": ["gremlin-mcp"],
-      "environment": {
-        "GREMLIN_URL": "ws://localhost:8182/gremlin"
-      },
-      "enabled": false
-    },
-
     // Context7 — remote MCP for library documentation lookups
     // Requires CONTEXT7_KEY env var (set in system/.env or Claude Environments UI)
     "context7": {
@@ -68,14 +57,6 @@
     "gopls": {
       "type": "local",
       "command": ["gopls", "mcp"],
-      "enabled": true
-    },
-
-    // Datadog — remote MCP server for the HashiCorp Cloud Datadog org
-    // Auth via OAuth: run `opencode mcp auth datadog` (browser flow)
-    "datadog": {
-      "type": "remote",
-      "url": "https://mcp.datadoghq.com/api/unstable/mcp-server/mcp",
       "enabled": true
     },
 

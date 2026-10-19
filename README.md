@@ -22,8 +22,6 @@ everforest_colors terminal color palette reference
   ghostty/        Ghostty terminal config
   git/            global git ignore + attributes
   karabiner/      Karabiner-Elements key remaps
-  sandbox-exec/   macOS sandbox profile for running agents (run-sandboxed.sh)
-  tmuxinator/     tmuxinator session layouts
   k9s/            Kubernetes TUI config
   mise/           mise runtime/tool version manager
   ranger/         ranger file manager
