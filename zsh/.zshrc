@@ -119,17 +119,3 @@ setopt glob_dots     # no special treatment for file names with a leading dot
 setopt no_auto_menu  # require an extra TAB press to open the completion menu
 
 source "${${(%):-%x}:A:h}/.zshrc_custom"  # resolves the repo dir through the ~/.zshrc symlink
-
-### MANAGED BY RANCHER DESKTOP START (DO NOT EDIT)
-export PATH="/Users/michael.zalimeni/.rd/bin:$PATH"
-### MANAGED BY RANCHER DESKTOP END (DO NOT EDIT)
-export PATH="/opt/homebrew/opt/go@1.20/bin:$PATH"
-
-# >>> sandbox-exec shortcuts >>>
-# Sandbox wrapper notes:
-# - `sandbox-opencode` runs opencode through `~/.config/sandbox-exec/run-sandboxed.sh`
-# - pass `--workdir=/path` before `opencode` args if you need a different sandbox root
-# - set `SANDBOX_EXEC_KEEP_PROFILE=1` or use the wrapper's `--debug-profile` flag to keep the assembled SBPL file for inspection
-# Sandbox shortcuts
-sandbox-opencode() { ~/.config/sandbox-exec/run-sandboxed.sh opencode "$@" }
-# <<< sandbox-exec shortcuts <<<

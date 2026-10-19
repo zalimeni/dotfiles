@@ -326,9 +326,6 @@ install_home_configs() {
 
   # Karabiner rewrites karabiner.json in place, so link the whole directory
   link_file "$DOTFILES_DIR/.config/karabiner" "$HOME/.config/karabiner"
-
-  link_file "$DOTFILES_DIR/.config/tmuxinator" "$HOME/.config/tmuxinator"
-  link_file "$DOTFILES_DIR/.config/sandbox-exec" "$HOME/.config/sandbox-exec"
 }
 
 # --- Sandbox env file -------------------------------------------------------
