@@ -7,9 +7,7 @@ Personal dotfiles for macOS. Shell functions, aliases, git config, terminal setu
 ```
 bat/              bat config + everforest theme
 bin/              custom scripts (tmux-sessionizer, git helpers, etc.)
-cmd/              Go CLI commands (sp2md)
 git/              shared git config (.gitconfig, included globally)
-internal/         Go library code
 system/           shell aliases (.alias) and functions (.function)
 vim/              minimal .vimrc
 zsh/              zsh4humans .zshrc/.zshenv, .p10k.zsh prompt, .zshrc_custom
