@@ -1,11 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Read(file_path:/Users/michael.zalimeni/workspace/**)",
-      "Edit(file_path:/Users/michael.zalimeni/workspace/**)",
-      "Write(file_path:/Users/michael.zalimeni/workspace/**)",
-      "Glob(path:/Users/michael.zalimeni/workspace/**)",
-      "Grep(path:/Users/michael.zalimeni/workspace/**)",
+      "Read(file_path:~/supabase/**)",
+      "Edit(file_path:~/supabase/**)",
+      "Write(file_path:~/supabase/**)",
+      "Glob(path:~/supabase/**)",
+      "Grep(path:~/supabase/**)",
       "Bash(bd *)",
       "Bash(git *)",
       "Bash(gh *)",
@@ -35,11 +35,9 @@
       "Skill(skill:bdloop)",
       "Skill(skill:bdplan)",
       "Skill(skill:bdreview)",
-      "Skill(skill:bdstatus)",
-      "Skill(skill:nopush)"
+      "Skill(skill:bdstatus)"
     ]
   },
-  "model": "opus",
   "hooks": {
     "PreToolUse": [
       {
@@ -47,8 +45,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/michael.zalimeni/workspace/dotfiles/bin/claude-nopush-guard",
-            "timeout": 10
+            "command": "rtk hook claude"
           }
         ]
       }
@@ -59,7 +56,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/michael.zalimeni/.claude/hooks/peon-ping/peon.sh",
+            "command": "/Users/zalimeni/.claude/hooks/peon-ping/peon.sh",
             "timeout": 10
           }
         ]
@@ -71,7 +68,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/michael.zalimeni/.claude/hooks/peon-ping/peon.sh",
+            "command": "/Users/zalimeni/.claude/hooks/peon-ping/peon.sh",
             "timeout": 10,
             "async": true
           }
@@ -84,7 +81,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/michael.zalimeni/.claude/hooks/peon-ping/peon.sh",
+            "command": "/Users/zalimeni/.claude/hooks/peon-ping/peon.sh",
             "timeout": 10,
             "async": true
           }
@@ -97,7 +94,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/michael.zalimeni/.claude/hooks/peon-ping/peon.sh",
+            "command": "/Users/zalimeni/.claude/hooks/peon-ping/peon.sh",
             "timeout": 10,
             "async": true
           }
@@ -110,7 +107,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/michael.zalimeni/.claude/hooks/peon-ping/peon.sh",
+            "command": "/Users/zalimeni/.claude/hooks/peon-ping/peon.sh",
             "timeout": 10,
             "async": true
           }
@@ -123,7 +120,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/michael.zalimeni/.claude/hooks/peon-ping/peon.sh",
+            "command": "/Users/zalimeni/.claude/hooks/peon-ping/peon.sh",
             "timeout": 10,
             "async": true
           }
@@ -136,7 +133,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/michael.zalimeni/.claude/hooks/peon-ping/peon.sh",
+            "command": "/Users/zalimeni/.claude/hooks/peon-ping/peon.sh",
             "timeout": 10,
             "async": true
           }
@@ -149,7 +146,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/michael.zalimeni/.claude/hooks/peon-ping/peon.sh",
+            "command": "/Users/zalimeni/.claude/hooks/peon-ping/peon.sh",
             "timeout": 10,
             "async": true
           }
@@ -162,7 +159,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/michael.zalimeni/.claude/hooks/peon-ping/peon.sh",
+            "command": "/Users/zalimeni/.claude/hooks/peon-ping/peon.sh",
             "timeout": 10,
             "async": true
           }
@@ -181,18 +178,28 @@
     "spec-interviewer-planner@leefowlercu-agent-kit": false,
     "playwright@claude-plugins-official": false,
     "commit-commands@claude-plugins-official": true,
-    "skill-creator@claude-plugins-official": true
+    "skill-creator@claude-plugins-official": true,
+    "superpowers@anthropic-plugin-directory": true
+  },
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/anthropics/claude-plugins-official.git"
+      }
+    }
   },
   "sandbox": {
     "enabled": true,
     "autoAllowBashIfSandboxed": true,
     "additionalWritePaths": [
-      "/Users/michael.zalimeni/go/pkg/mod/cache",
-      "/Users/michael.zalimeni/Library/Caches"
+      "~/go/pkg/mod/cache",
+      "~/Library/Caches"
     ]
   },
   "effortLevel": "high",
   "skipDangerousModePermissionPrompt": true,
+  "theme": "dark",
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": false
 }

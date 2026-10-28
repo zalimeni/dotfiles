@@ -4,6 +4,15 @@
 - Do not respond with compliments or flowery language; keep replies concise and direct.
 - **MANDATORY FIRST ACTION**: Before doing ANYTHING else in a new session, load the **caveman** skill and activate it at **full** intensity. Do not respond to the user's first message until caveman is loaded. Stay in caveman mode unless the user says "stop caveman" or "normal mode".
 - When asking the user to make a decision that has significant impact on how instructions will be executed, default to using the multiple-choice dialog instead of a free-form question. Only fall back to free-form text when the decision cannot be represented well with concrete options.
+- Write docs and other permanent prose according to [ASD-STE100](https://www.asd-ste100.org/) standards.
+
+## Subagent Models
+
+Always use the Task tool to delegate work to subagents with the appropriate model. Do not default to doing everything in the main conversation — prefer spawning focused subagents for each step of a task:
+
+- **Explore** (codebase search, file reading, research): `model: "haiku"`
+- **Plan** (architecture, design, implementation planning): `model: "opus"`
+- **Implementation** (code editing, writing files, running commands): `model: "sonnet"`
 
 # Development Environment
 
@@ -31,7 +40,6 @@
 - **Branch Naming**: Use `zalimeni/` prefix for branch names (not `mz/`)
 - **Test Plans**: Before opening a PR, look for test plan checkboxes (e.g., `- [ ]` items under a "Test Plan" or "Testing" section). Proactively run any that can be verified locally and check them off (`- [x]`). Leave items unchecked if they require manual/external verification.
 - **Restricted**: Don't modify generated code, vendor/, or build artifacts
-- **No-Push Mode**: If `git nopush status` reports ON for the repo, or `~/.claude/nopush` exists, local-only mode is active. Do not push, open PRs, or run `bd dolt push`, and do not disable the block yourself — load the **nopush** skill for the full rules. This mode overrides every "must push" instruction below, including the beads session-close protocol.
 - **Branch Switching**: NEVER use `git stash` to save staged work when switching branches. If you need to verify something on another branch, either make a temporary commit on the current branch, use `git worktree`, or clone to a temp directory. Stashing staged work risks losing carefully prepared changes.
 
 ## Jira / Atlassian
@@ -47,8 +55,6 @@ When working on beads issues (via bd CLI), follow the rules below. Ignore them f
 ### Landing the Plane (Session Completion)
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
-
-**Exception — no-push mode.** If `git nopush status` reports ON, or `~/.claude/nopush` exists, skip steps 4's push and `bd dolt push` entirely. The session is complete once work is committed locally. Report the branch name and that it is unpushed. Do not disable the block; only the user does that.
 
 **MANDATORY WORKFLOW:**
 
@@ -94,8 +100,10 @@ bd create "Task name" --body-file "$TMPDIR/bd-desc.md"
 bd comments add proj-5 "Completed implementation, tests passing"
 ```
 
-**CRITICAL RULES:** (all suspended while no-push mode is active)
+**CRITICAL RULES:**
 - Work is NOT complete until `git push` succeeds
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
+
+@RTK.md
