@@ -169,14 +169,15 @@ install_claude() {
   # Skills — per-skill symlinks (skip remote skills already in ~/.claude/skills/)
   if [ -d "$DOTFILES_DIR/.config/claude/skills" ]; then
     mkdir -p "$claude_dir/skills"
-    # Build set of remote skill names to skip
+    # Build set of remote skill names to skip (space-delimited string;
+    # associative arrays need bash 4+, macOS ships 3.2)
     local manifest="$DOTFILES_DIR/.config/claude/skills/remote-skills.manifest"
-    local -A remote_skills=()
+    local remote_skills=" "
     if [ -f "$manifest" ]; then
       while IFS= read -r _line || [ -n "$_line" ]; do
         [[ -z "$_line" || "$_line" =~ ^[[:space:]]*# ]] && continue
         local _rname; read -r _rname _ _ <<< "$_line"
-        remote_skills["$_rname"]=1
+        remote_skills+="$_rname "
       done < "$manifest"
     fi
     for skill_dir in "$DOTFILES_DIR/.config/claude/skills"/*/; do
@@ -184,7 +185,7 @@ install_claude() {
       local skill_name
       skill_name="$(basename "$skill_dir")"
       # Skip remote skills — they're downloaded directly to ~/.claude/skills/
-      [[ -n "${remote_skills[$skill_name]+x}" ]] && continue
+      [[ "$remote_skills" == *" $skill_name "* ]] && continue
       link_file "$skill_dir" "$claude_dir/skills/$skill_name"
     done
     ok "linked skills"
