@@ -242,7 +242,7 @@ install_git() {
 
   if [ -z "$(git config --global user.email 2>/dev/null || true)" ]; then
     git config --global user.email "zalimeni@users.noreply.github.com"
-    ok "set git user.email (personal default)"
+    ok "set git user.email (GitHub noreply default)"
   else
     ok "git user.email already set: $(git config --global user.email)"
   fi
