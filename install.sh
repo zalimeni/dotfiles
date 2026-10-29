@@ -307,8 +307,14 @@ install_home_configs() {
 
   # zsh4humans setup; .zshrc sources zsh/.zshrc_custom
   link_file "$DOTFILES_DIR/zsh/.zshenv" "$HOME/.zshenv"
+  link_file "$DOTFILES_DIR/zsh/.zprofile" "$HOME/.zprofile"
   link_file "$DOTFILES_DIR/zsh/.zshrc" "$HOME/.zshrc"
+  link_file "$DOTFILES_DIR/zsh/.zshrc_custom" "$HOME/.zshrc_custom"
   link_file "$DOTFILES_DIR/zsh/.p10k.zsh" "$HOME/.p10k.zsh"
+
+  # Hide the "Last login" line in new terminal windows
+  touch "$HOME/.hushlogin"
+  ok "ensured $HOME/.hushlogin"
 
   link_file "$DOTFILES_DIR/vim/.vimrc" "$HOME/.vimrc"
 
