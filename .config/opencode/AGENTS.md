@@ -18,19 +18,16 @@ Always use the Task tool to delegate work to subagents with the appropriate mode
 
 ## Environment
 - **OS**: macOS
-- **Default Language**: Go
+- **Default Language**: TypeScript
 
 ## CLI Tool Preferences
 - **Structural code search**: Use `ast-grep --lang [language] -p '<pattern>'`. Default to this for any search requiring syntax or code structure awareness. Adjust `--lang` for the target language.
 - **Plain-text search**: Use `rg` (ripgrep) over `grep`. Use appropriate flags (e.g., `--type`, `--glob`, `-i`, `-l`). Ripgrep respects `.gitignore` by default and is significantly faster on large codebases.
 - Prefer ast-grep when searching for code patterns; prefer ripgrep for everything else (config files, logs, plain strings, multi-file text search).
 
-## Go Standards
-- **Build**: Make/Makefiles
-- **Testing**: Testify (testify/assert, testify/mock, testify/suite)
-- **Table Tests**: Prefer map-based table tests over slices with a `name` field
-- **Linting**: golangci-lint, staticcheck
-- **Docs**: Godoc comments on all exported APIs; internal code only where non-obvious
+## TypeScript Standards
+- **Package manager**: pnpm (workspaces); follow each repo's own scripts for build, lint, and type-check
+- **Testing**: Vitest
 
 ## Practices
 - **Changes**: Context-dependent scope (minimal for bugs/urgent, broader for features)

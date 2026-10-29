@@ -119,3 +119,6 @@ setopt glob_dots     # no special treatment for file names with a leading dot
 setopt no_auto_menu  # require an extra TAB press to open the completion menu
 
 source "${${(%):-%x}:A:h}/.zshrc_custom"  # resolves the repo dir through the ~/.zshrc symlink
+export PATH="$HOME/.local/bin:$PATH"
+
+alias assume="source assume"  # Granted: must be sourced to export credentials into the shell

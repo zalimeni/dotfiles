@@ -6,6 +6,11 @@
       "Write(file_path:~/supabase/**)",
       "Glob(path:~/supabase/**)",
       "Grep(path:~/supabase/**)",
+      "Read(file_path:~/dotfiles/**)",
+      "Edit(file_path:~/dotfiles/**)",
+      "Write(file_path:~/dotfiles/**)",
+      "Glob(path:~/dotfiles/**)",
+      "Grep(path:~/dotfiles/**)",
       "Bash(bd *)",
       "Bash(git *)",
       "Bash(gh *)",
@@ -36,7 +41,8 @@
       "Skill(skill:bdplan)",
       "Skill(skill:bdreview)",
       "Skill(skill:bdstatus)"
-    ]
+    ],
+    "defaultMode": "auto"
   },
   "hooks": {
     "PreToolUse": [
@@ -173,6 +179,7 @@
     "code-review@claude-plugins-official": false,
     "feature-dev@claude-plugins-official": false,
     "gopls-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
     "ralph-loop@claude-plugins-official": false,
     "beads@beads-marketplace": true,
     "spec-interviewer-planner@leefowlercu-agent-kit": false,
