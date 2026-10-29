@@ -199,10 +199,7 @@
   "sandbox": {
     "enabled": true,
     "autoAllowBashIfSandboxed": true,
-    "additionalWritePaths": [
-      "~/go/pkg/mod/cache",
-      "~/Library/Caches"
-    ]
+    "excludedCommands": ["gh *", "git push *", "git fetch *", "git pull *"]
   },
   "effortLevel": "high",
   "skipDangerousModePermissionPrompt": true,
