@@ -10,7 +10,7 @@ bin/              custom scripts (tmux-sessionizer, git helpers, etc.)
 git/              shared git config (.gitconfig, included globally)
 system/           shell aliases (.alias) and functions (.function)
 vim/              minimal .vimrc
-zsh/              zsh4humans .zshrc/.zshenv, .p10k.zsh prompt, .zshrc_custom
+zsh/              zsh4humans setup: .zshrc, .zshrc_custom (personal), .zprofile, .zshenv, .p10k.zsh (see zsh/README.md)
 wallpaper/        desktop wallpapers
 everforest_colors terminal color palette reference
 

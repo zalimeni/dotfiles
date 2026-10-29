@@ -87,13 +87,16 @@ fi
 
 # Define key bindings.
 if (( ${+functions[z4h]} || ${+commands[z4h]} )); then
-  z4h bindkey undo Ctrl+/   Shift+Tab  # undo the last command line change
-  z4h bindkey redo Option+/            # redo the last undone command line change
+  z4h bindkey z4h-backward-kill-word  Ctrl+Backspace     Ctrl+H
+  z4h bindkey z4h-backward-kill-zword Ctrl+Alt+Backspace
 
-  z4h bindkey z4h-cd-back    Shift+Left   # cd into the previous directory
-  z4h bindkey z4h-cd-forward Shift+Right  # cd into the next directory
-  z4h bindkey z4h-cd-up      Shift+Up     # cd into the parent directory
-  z4h bindkey z4h-cd-down    Shift+Down   # cd into a child directory
+  z4h bindkey undo Ctrl+/ Shift+Tab  # undo the last command line change
+  z4h bindkey redo Alt+/             # redo the last undone command line change
+
+  z4h bindkey z4h-cd-back    Alt+Left   # cd into the previous directory
+  z4h bindkey z4h-cd-forward Alt+Right  # cd into the next directory
+  z4h bindkey z4h-cd-up      Alt+Up     # cd into the parent directory
+  z4h bindkey z4h-cd-down    Alt+Down   # cd into a child directory
 fi
 
 # Autoload functions.
@@ -118,7 +121,6 @@ alias ls="${aliases[ls]:-ls} -A"
 setopt glob_dots     # no special treatment for file names with a leading dot
 setopt no_auto_menu  # require an extra TAB press to open the completion menu
 
-source "${${(%):-%x}:A:h}/.zshrc_custom"  # resolves the repo dir through the ~/.zshrc symlink
-export PATH="$HOME/.local/bin:$PATH"
-
-alias assume="source assume"  # Granted: must be sourced to export credentials into the shell
+# Personal customizations live in ~/.zshrc_custom (see zsh/README.md).
+# Keep this as the only custom line below the z4h template.
+[[ -r ~/.zshrc_custom ]] && source ~/.zshrc_custom

@@ -1,5 +1,17 @@
-# Zsh-specific config — sourced by ~/.zshrc
-# All env vars, aliases, and functions live in system/
+# Personal zsh customizations — linked to ~/.zshrc_custom by install.sh.
+# Sourced from the last line of ~/.zshrc, after `z4h init`, so z4h functions
+# are available. Settings that must run before `z4h init` (zstyle) stay in .zshrc.
+# See zsh/README.md.
+
+# Key bindings (mac): replace the template's Alt-based bindings.
+if (( ${+functions[z4h]} || ${+commands[z4h]} )); then
+  z4h bindkey redo Option+/            # redo the last undone command line change
+
+  z4h bindkey z4h-cd-back    Shift+Left   # cd into the previous directory
+  z4h bindkey z4h-cd-forward Shift+Right  # cd into the next directory
+  z4h bindkey z4h-cd-up      Shift+Up     # cd into the parent directory
+  z4h bindkey z4h-cd-down    Shift+Down   # cd into a child directory
+fi
 
 # History
 setopt HIST_IGNORE_ALL_DUPS
@@ -10,12 +22,20 @@ setopt INC_APPEND_HISTORY
 HISTSIZE=10000000
 SAVEHIST=10000000
 
-# Source dotfiles (order matters: env first, then aliases/functions)
-# Resolve DOTFILES_DIR from this file's location (works whether sourced directly or via symlink)
+# Aliases
+alias assume="source assume"  # Granted: must be sourced to export credentials into the shell
+alias c="claude"
+
+# mise: per-project tool versions.
+if (( ${+commands[mise]} )); then
+  eval "$(mise activate zsh)"
+fi
+
+# Source dotfiles (order matters: env first, then aliases/functions).
+# Resolve DOTFILES_DIR through the ~/.zshrc_custom symlink.
 (){
   local src="${(%):-%x}"
-  [[ -L "$src" ]] && src="$(readlink -f "$src")"
-  DOTFILES_DIR="$(cd "$(dirname "$src")/.." && pwd)"
+  DOTFILES_DIR="${src:A:h:h}"
 }
 for DOTFILE in "$DOTFILES_DIR"/system/.{env,alias,function,private_env,private_alias,private_function,work_env,work_alias,work_function}; do
   [[ -f "$DOTFILE" ]] && source "$DOTFILE"
