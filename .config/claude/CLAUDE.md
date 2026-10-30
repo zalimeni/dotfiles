@@ -39,12 +39,12 @@ Always use the Task tool to delegate work to subagents with the appropriate mode
 - **Restricted**: Don't modify generated code, vendor/, or build artifacts
 - **Branch Switching**: NEVER use `git stash` to save staged work when switching branches. If you need to verify something on another branch, either make a temporary commit on the current branch, use `git worktree`, or clone to a temp directory. Stashing staged work risks losing carefully prepared changes.
 
-## Jira / Atlassian
-- When filing or updating Jira tickets, always provide the description as Markdown, even if the source material is brief.
-- For multi-line Markdown descriptions, write the content to a temp file or heredoc and pass the file contents to the CLI instead of embedding `#`-prefixed lines directly in a quoted shell argument.
-- Ensure team assignment actually succeeds before finishing. The team field may be a dedicated field or a custom field such as `customfield_12345`; if the correct team value or field ID is unclear, ask one targeted question.
-- If a Jira ticket should belong to an epic and the correct epic is unclear, ask one targeted question instead of guessing.
-- When a ticket references code, use Markdown links to the exact file and line in the repository UI; do not leave code references as plain text paths and line numbers.
+## Linear (~/supabase work only)
+- When filing or updating work tickets, always provide the description as Markdown/formatted text with a brief description and Acceptance Criteria, even if the source material is brief.
+- If a ticket should belong to a parent and the correct parent is unclear, ask one targeted question instead of guessing.
+- When a ticket references code, use Markdown links to the exact file and line in the repository; do not leave code references as plain text paths and line numbers.
+
+@RTK.md
 
 ## Using Beads
 When working on beads issues (via bd CLI), follow the rules below. Ignore them for non-beads contexts.
@@ -102,5 +102,3 @@ bd comments add proj-5 "Completed implementation, tests passing"
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
-
-@RTK.md
