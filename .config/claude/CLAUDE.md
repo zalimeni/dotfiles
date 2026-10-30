@@ -6,13 +6,30 @@
 - When asking the user to make a decision that has significant impact on how instructions will be executed, default to using the multiple-choice dialog instead of a free-form question. Only fall back to free-form text when the decision cannot be represented well with concrete options.
 - Write docs and other permanent prose according to [ASD-STE100](https://www.asd-ste100.org/) standards.
 
-## Subagent Models
+## Orchestrator Mode (cost policy)
 
-Always use the Task tool to delegate work to subagents with the appropriate model. Do not default to doing everything in the main conversation — prefer spawning focused subagents for each step of a task:
+The main conversation runs on an expensive model. Its role is **orchestrator/architect only**: decompose tasks, plan, write detailed briefs for subagents, review their reports, and verify the overall result. Do not run exploratory searches, bulk file reads, or edit loops in the main conversation — those token-heavy loops belong in cheaper subagent contexts.
 
-- **Explore** (codebase search, file reading, research): `model: "haiku"`
-- **Plan** (architecture, design, implementation planning): `model: "opus"`
-- **Implementation** (code editing, writing files, running commands): `model: "sonnet"`
+Route work by delegating to subagents:
+
+- **Exploration & research** (codebase search, file reading, tracing behavior): `explorer` agent (Haiku, low effort). Ask for conclusions and `file:line` pointers, not file contents. If the question is subtle (tracing tricky control flow, "why" questions where a cheap model might miss nuance), escalate to the `Explore` agent with `model: "sonnet"` instead.
+- **Complex implementation** (multi-file refactors, tricky debugging, algorithmically hard or risky changes): `heavy-implementer` agent (Opus, high effort).
+- **Routine implementation** (well-scoped edits, boilerplate, pattern-following features, tests, mechanical refactors): `light-implementer` agent (Sonnet, high effort).
+- **Planning/architecture** stays in the main conversation — that is the orchestrator's job.
+
+Every delegation brief must be self-contained (subagents see none of our conversation): the goal, exact files/symbols involved, constraints, the chosen approach, an existing pattern to mirror if any, and how to verify. Instruct subagents to return concise structured summaries, never file dumps.
+
+Exceptions — do it inline instead of delegating:
+- Trivial single-file edits where writing the brief would cost more than the change itself.
+- Reading a specific short file/section you already identified, when its content is needed to write a good brief.
+
+Review every subagent report before declaring work done; re-brief with corrections rather than redoing the work in the main conversation.
+
+**Verification division of labor:** implementer agents run tests/typecheck/build in their own context and report pass/fail with evidence. The orchestrator trusts a clean report and does not re-run suites in the main conversation — only spot-check when a report is suspicious, contradictory, or the change is high-risk.
+
+**Escalation tuning:** if a haiku exploration comes back thin and needs re-briefing more than once, route that class of question to the `Explore` agent with `model: "sonnet"` instead of retrying on haiku.
+
+**Session hygiene:** long conversations re-pay the whole context at main-model prices every turn. Keep the main conversation lean (no bulk file contents, no pasted logs — summarize instead). When a task is finished and the next request is unrelated, or when context has grown very large, recommend the user start a fresh session; persist anything needed for continuity in files or memory first.
 
 # Development Environment
 
