@@ -83,6 +83,7 @@
     // Canonical Claude agent files use profile names; the generator resolves
     // them to concrete OpenCode model IDs from this map.
     "agentProfiles": {
+      "light": "github-copilot/claude-haiku-4.5",
       "balanced": "small_model",
       "heavy": "model"
     }
