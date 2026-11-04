@@ -48,7 +48,11 @@ Review every subagent report before declaring work done; re-brief with correctio
 
 ## Practices
 - **Changes**: Context-dependent scope (minimal for bugs/urgent, broader for features)
-- **Commits**: Conventional Commits format
+- **Commits**: Conventional Commits format. Always follow the 50/72 rule:
+  - Subject line: 50 characters or fewer, including the Conventional Commits prefix. Use the imperative mood. Do not end with a period.
+  - Blank line between the subject and the body. Without it, tools such as `git log --oneline` and `git rebase` can misread the message.
+  - Body: wrap each line at 72 characters or fewer. Explain what changed and why, not how.
+  - Trailers (for example `Co-authored-by`) go at the end of the body, after a blank line.
 - **Rebase / Squash**: When rebasing and squashing a branch, preserve the branch's primary commit message as the final squashed commit message. Check that message for accuracy against the branch's final combined changes and adjust it if needed, but do not replace it with a later secondary message such as a fix, refactor, or follow-up commit.
 - **PRs**: Always create draft PRs (`gh pr create --draft`) unless explicitly told otherwise
 - **Branch Naming**: Use `zalimeni/` prefix for branch names (not `mz/`)
