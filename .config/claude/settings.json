@@ -199,7 +199,16 @@
   "sandbox": {
     "enabled": true,
     "autoAllowBashIfSandboxed": true,
-    "excludedCommands": ["gh *", "git push *", "git fetch *", "git pull *"]
+    "excludedCommands": [
+      "gh *",
+      "git push*",
+      "git fetch*",
+      "git pull*",
+      "rtk gh *",
+      "rtk git push*",
+      "rtk git fetch*",
+      "rtk git pull*"
+    ]
   },
   "effortLevel": "high",
   "skipDangerousModePermissionPrompt": true,

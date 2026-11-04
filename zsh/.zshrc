@@ -1,3 +1,5 @@
+# Add deno completions to search path
+if [[ ":$FPATH:" != *":/Users/zalimeni/.zsh/completions:"* ]]; then export FPATH="/Users/zalimeni/.zsh/completions:$FPATH"; fi
 # Personal Zsh configuration file. It is strongly recommended to keep all
 # shell customization and configuration (including exported environment
 # variables such as PATH) in this file or in files sourced from it.
@@ -124,3 +126,7 @@ setopt no_auto_menu  # require an extra TAB press to open the completion menu
 # Personal customizations live in ~/.zshrc_custom (see zsh/README.md).
 # Keep this as the only custom line below the z4h template.
 [[ -r ~/.zshrc_custom ]] && source ~/.zshrc_custom
+. "/Users/zalimeni/.deno/env"
+# Initialize zsh completions (added by deno install script)
+autoload -Uz compinit
+compinit
