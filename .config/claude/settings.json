@@ -189,7 +189,8 @@
     "playwright@claude-plugins-official": false,
     "commit-commands@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
-    "superpowers@anthropic-plugin-directory": true
+    "superpowers@anthropic-plugin-directory": true,
+    "vercel@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -203,7 +204,9 @@
     "enabled": true,
     "autoAllowBashIfSandboxed": true,
     "network": {
-      "allowedDomains": ["github.com"]
+      "allowedDomains": [
+        "github.com"
+      ]
     },
     "excludedCommands": [
       "gh *",
@@ -219,6 +222,7 @@
   "effortLevel": "high",
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark",
+  "switchModelsOnFlag": false,
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": false
 }
