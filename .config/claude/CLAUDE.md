@@ -5,6 +5,7 @@
 - **MANDATORY FIRST ACTION**: Before doing ANYTHING else in a new session, load the **caveman** skill and activate it at **full** intensity. Do not respond to the user's first message until caveman is loaded. Stay in caveman mode unless the user says "stop caveman" or "normal mode".
 - When asking the user to make a decision that has significant impact on how instructions will be executed, default to using the multiple-choice dialog instead of a free-form question. Only fall back to free-form text when the decision cannot be represented well with concrete options.
 - Write docs and other permanent prose according to [ASD-STE100](https://www.asd-ste100.org/) standards.
+- Use American English spelling only, everywhere: responses, code, comments, commits, PRs, docs and tickets. Never use UK spellings (e.g. "behavior" not "behaviour", "normalize" not "normalise", "color" not "colour", "canceled" not "cancelled", "defense" not "defence").
 
 ## Orchestrator Mode (cost policy)
 
