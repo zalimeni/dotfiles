@@ -124,3 +124,13 @@ bd comments add proj-5 "Completed implementation, tests passing"
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
+
+## Sandbox notes (macOS Bash tool)
+- Symptom: `(eval):1: nice(5) failed: operation not permitted` when zsh starts a background job with `&`.
+- Cause: the zsh option BG_NICE (on by default) calls nice(5). The Seatbelt sandbox denies it. It is not a Claude permission setting.
+- Workaround: run `unsetopt BG_NICE` before the `&` command. Or use `bash -c`. Or use the Bash tool `run_in_background` parameter (untested).
+- Start a server and `curl` it in ONE command. Later commands cannot see or signal the processes of an earlier command.
+- Other sandbox limits seen with a local server:
+  - Binding port 3000 fails with `listen EPERM` unless `sandbox.network.allowLocalBinding: true` is set.
+  - Headless Chrome cannot write its profile in the sandbox.
+  - `pnpm install` could not reach the npm registry in the sandbox. `npm install --cache "$TMPDIR/npmcache"` worked.
