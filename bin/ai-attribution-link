@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+#
+# Print a permalink to the latest AI_ATTRIBUTION.md on main.
+#
+# The permalink is pinned to the last commit on origin/main that changed the
+# file. It is cached and refreshed at most once per TTL (default: 1 day), so
+# agents can call this before each attribution without a network round trip.
+#
+# Usage: ai-attribution-link [--refresh]
+#
+set -euo pipefail
+
+REPO_URL="https://github.com/zalimeni/dotfiles"
+FILE="AI_ATTRIBUTION.md"
+TTL_MIN="${AI_ATTRIBUTION_TTL_MIN:-1440}"
+DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/ai-attribution/permalink"
+
+force=0
+[ "${1:-}" = "--refresh" ] && force=1
+
+# Use the cache while it is fresh.
+if [ "$force" -eq 0 ] && [ -s "$CACHE" ] \
+  && [ -n "$(find "$CACHE" -mmin "-$TTL_MIN" 2>/dev/null)" ]; then
+  cat "$CACHE"
+  exit 0
+fi
+
+# Refresh from origin/main. Only pushed commits make valid permalinks.
+git -C "$DOTFILES_DIR" fetch --quiet origin \
+  "+refs/heads/main:refs/remotes/origin/main" 2>/dev/null || true
+sha="$(git -C "$DOTFILES_DIR" log -1 --format=%H origin/main -- "$FILE" \
+  2>/dev/null || true)"
+
+if [ -n "$sha" ]; then
+  mkdir -p "$(dirname "$CACHE")"
+  printf '%s/blob/%s/%s\n' "$REPO_URL" "$sha" "$FILE" > "$CACHE.tmp"
+  mv "$CACHE.tmp" "$CACHE"
+  cat "$CACHE"
+elif [ -s "$CACHE" ]; then
+  # Fetch failed: a stale permalink is better than none.
+  cat "$CACHE"
+else
+  # File not on main yet, or no clone: fall back to the branch URL.
+  printf '%s/blob/main/%s\n' "$REPO_URL" "$FILE"
+fi

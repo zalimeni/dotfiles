@@ -25,6 +25,8 @@ example:
 - A review comment reply ends with `🤖 Authored by AI (<model>)`.
 - A commit includes a `Co-authored-by` trailer that names the model.
 
-Each marker links back to this page. Refer to the
+Each marker links back to this page with a permalink to its latest
+version. The [ai-attribution-link](bin/ai-attribution-link) script gets
+that permalink. Refer to the
 [Pull Requests section of AGENTS.md](AGENTS.md#pull-requests) for the
 exact instructions.
