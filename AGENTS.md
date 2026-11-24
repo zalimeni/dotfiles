@@ -24,9 +24,13 @@ If `bd doctor` reports uncommitted Dolt changes, commit them first with
 
 When creating or updating a PR as the agent:
 
+Every attribution links to the AI attribution policy, so readers can see why it is there:
+<https://github.com/zalimeni/dotfiles/blob/main/AI_ATTRIBUTION.md>
+
 - Ensure PR attribution is present either by relying on the repo's PR template and updating the PR afterward, or by including it directly in any custom PR body
-- If you write a custom PR description, end it with a final attribution line in this format: `🤖 Authored using AI (<exact model>)`
-- If you write PR review comment replies, end each with a blank line then attribution in this format: `🤖 _Authored by AI (<exact model>)_`
-- If you create a git commit, include commit-body attribution plus a co-author trailer using the exact model, for example:
+- If you write a custom PR description, end it with a final attribution line in this format: `🤖 [Authored using AI](https://github.com/zalimeni/dotfiles/blob/main/AI_ATTRIBUTION.md) (<exact model>)`
+- If you write PR review comment replies, end each with a blank line then attribution in this format: `🤖 _[Authored by AI](https://github.com/zalimeni/dotfiles/blob/main/AI_ATTRIBUTION.md) (<exact model>)_`
+- If you create a git commit, include commit-body attribution with the policy link plus a co-author trailer using the exact model, for example:
   - `Generated with OpenCode (claude-opus-4.6).`
+  - `See https://github.com/zalimeni/dotfiles/blob/main/AI_ATTRIBUTION.md`
   - `Co-authored-by: OpenCode (claude-opus-4.6) <noreply@anthropic.com>`
