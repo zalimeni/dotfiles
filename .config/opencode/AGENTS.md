@@ -61,6 +61,20 @@ Review every subagent report before declaring work done; re-brief with correctio
 - **Restricted**: Don't modify generated code, vendor/, or build artifacts
 - **Branch Switching**: NEVER use `git stash` to save staged work when switching branches. If you need to verify something on another branch, either make a temporary commit on the current branch, use `git worktree`, or clone to a temp directory. Stashing staged work risks losing carefully prepared changes.
 
+## AI Attribution
+When you author or significantly change work that is published under my name, mark it as AI work. The policy is in [AI_ATTRIBUTION.md](https://github.com/zalimeni/dotfiles/blob/main/AI_ATTRIBUTION.md).
+
+- Get `<permalink>` from `ai-attribution-link` (in `~/dotfiles/bin/`). It prints a commit-pinned permalink to the latest policy on `main` and refreshes its cache once a day.
+- In Markdown, always use the anchor text shown below. Do not write the bare URL.
+- Use the exact model ID for `<exact model>`.
+- PRs: either rely on the repo's PR template and update the PR afterward, or include the attribution directly in a custom PR body.
+- Custom PR description: end it with a final line in this format: `🤖 [Authored using AI](<permalink>) (<exact model>)`
+- PR review comment replies: end each with a blank line, then this format: `🤖 _[Authored by AI](<permalink>) (<exact model>)_`
+- Git commits: add body attribution with the policy link, plus a co-author trailer. Git does not render Markdown, so use the plain permalink. Example:
+  - `Generated with <harness> (claude-opus-4.6).`
+  - `AI attribution policy: <permalink>`
+  - `Co-authored-by: <harness> (claude-opus-4.6) <noreply@anthropic.com>`
+
 ## Linear (~/supabase work only)
 - When filing or updating work tickets, always provide the description as Markdown/formatted text with a brief description and Acceptance Criteria, even if the source material is brief.
 - If a ticket should belong to a parent and the correct parent is unclear, ask one targeted question instead of guessing.

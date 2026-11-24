@@ -28,5 +28,5 @@ example:
 Each marker links back to this page with a permalink to its latest
 version. The [ai-attribution-link](bin/ai-attribution-link) script gets
 that permalink. Refer to the
-[Pull Requests section of AGENTS.md](AGENTS.md#pull-requests) for the
-exact instructions.
+[AI Attribution section](.config/claude/CLAUDE.md#ai-attribution) of my
+agent instructions for the exact rules.
